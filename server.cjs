@@ -4,7 +4,7 @@ const path = require('path');
 
 const PORT = 3000;
 const STATIC_DIR = path.join(__dirname, 'dist');
-const API_TOKEN = process.env.GATEWAY_TOKEN || '88bbbf666aa66bb009900ee11ff22aa33bb44cc55';
+const API_TOKEN = process.env.GATEWAY_TOKEN;
 
 const MIME_TYPES = {
     '.html': 'text/html',
