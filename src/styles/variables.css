@@ -1,0 +1,93 @@
+/* AI-HAM Chat - Design Tokens (Claude AI Style) */
+
+:root {
+  /* Colors - Dark Mode (Claude inspired) */
+  --bg-app: #0f0f11;
+  --bg-sidebar: #18181b;
+  --bg-sidebar-hover: #27272a;
+  --bg-chat: #0f0f11;
+  
+  --bg-input: #18181b;
+  --bg-input-hover: #212124;
+  
+  --border-light: rgba(255, 255, 255, 0.1);
+  --border-sidebar: rgba(255, 255, 255, 0.08);
+
+  /* Message Bubbles */
+  --msg-user-bg: #212124; /* Soft dark gray for user */
+  --msg-ai-bg: transparent; /* AI doesn't have a distinct background bubble, just text */
+  --msg-ai-border: rgba(255, 255, 255, 0.1);
+
+  /* Typography Colors */
+  --text-primary: #ECECEC;
+  --text-secondary: #A1A1A9;
+  --text-muted: #71717A;
+  
+  /* Accent Colors */
+  --accent-primary: #D1D1D1;
+  --accent-hover: #FFFFFF;
+  --accent-brand: #C2955B; /* A subtle warm earthy accent if needed */
+
+  /* Shadows */
+  --shadow-input: 0 4px 20px rgba(0, 0, 0, 0.5);
+  --shadow-dropdown: 0 10px 40px rgba(0, 0, 0, 0.6);
+
+  /* Borders & Radius */
+  --radius-sm: 6px;
+  --radius-md: 12px;
+  --radius-lg: 18px;
+  --radius-full: 9999px;
+
+  /* Spacing */
+  --sidebar-width: 280px;
+  --content-max-width: 850px;
+  
+  /* Utilities */
+  --transition-fast: 0.15s ease-in-out;
+  --transition-normal: 0.3s cubic-bezier(0.2, 0.8, 0.2, 1);
+}
+
+* {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+}
+
+body {
+  font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+  background-color: var(--bg-app);
+  color: var(--text-primary);
+  line-height: 1.6;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+/* Base App Layout */
+.app-container {
+  display: flex;
+  height: 100vh;
+  width: 100vw;
+  overflow: hidden;
+  background-color: var(--bg-app);
+}
+
+/* Animations */
+@keyframes slideUp {
+  from {
+    opacity: 0;
+    transform: translateY(10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
