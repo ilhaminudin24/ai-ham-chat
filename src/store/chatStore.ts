@@ -12,6 +12,14 @@ export interface Conversation {
   title: string;
   messages: Message[];
   createdAt: string;
+  folderId: string | null;
+}
+
+export interface Folder {
+  id: string;
+  name: string;
+  icon: string;
+  order: number;
 }
 
 export interface ChatState {
@@ -20,6 +28,8 @@ export interface ChatState {
   isStreaming: boolean;
   isSidebarOpen: boolean;
   selectedModel: string;
+  folders: Folder[];
+  searchQuery: string;
   
   // Actions
   createNewConversation: () => void;
@@ -31,7 +41,21 @@ export interface ChatState {
   setSidebarOpen: (isOpen: boolean) => void;
   setSelectedModel: (model: string) => void;
   deleteConversation: (id: string) => void;
+  setSearchQuery: (query: string) => void;
+  
+  // Folder actions
+  createFolder: (name: string, icon?: string) => void;
+  deleteFolder: (id: string) => void;
+  renameFolder: (id: string, name: string) => void;
+  moveToFolder: (conversationId: string, folderId: string | null) => void;
 }
+
+const defaultFolders: Folder[] = [
+  { id: 'today', name: 'Today', icon: '📅', order: 0 },
+  { id: 'work', name: 'Work', icon: '💼', order: 1 },
+  { id: 'personal', name: 'Personal', icon: '🏠', order: 2 },
+  { id: 'archived', name: 'Archived', icon: '📦', order: 3 },
+];
 
 export const useChatStore = create<ChatState>()(
   persist(
@@ -41,6 +65,8 @@ export const useChatStore = create<ChatState>()(
       isStreaming: false,
       isSidebarOpen: false,
       selectedModel: 'minimax/MiniMax-M2.7',
+      folders: defaultFolders,
+      searchQuery: '',
 
       createNewConversation: () => {
         const id = Date.now().toString();
@@ -48,12 +74,13 @@ export const useChatStore = create<ChatState>()(
           id,
           title: 'New Chat',
           messages: [],
-          createdAt: new Date().toISOString()
+          createdAt: new Date().toISOString(),
+          folderId: null
         };
         set({
           conversations: [newConv, ...get().conversations],
           currentConversationId: id,
-          isSidebarOpen: false // close sidebar on mobile when creating
+          isSidebarOpen: false
         });
       },
 
@@ -66,11 +93,10 @@ export const useChatStore = create<ChatState>()(
           const updatedConvs = state.conversations.map((conv) => {
             if (conv.id === conversationId) {
               const updatedMessages = [...conv.messages, message];
-              // Update title if it's the first user message
               let newTitle = conv.title;
               if (updatedMessages.length === 1 && message.role === 'user') {
-                 newTitle = (message.content || 'Image').slice(0, 35);
-                 if ((message.content || 'Image').length > 35) newTitle += '...';
+                newTitle = (message.content || 'Image').slice(0, 35);
+                if ((message.content || 'Image').length > 35) newTitle += '...';
               }
               return { ...conv, messages: updatedMessages, title: newTitle };
             }
@@ -82,21 +108,21 @@ export const useChatStore = create<ChatState>()(
 
       updateLastMessage: (conversationId, content) => {
         set((state) => {
-           const updatedConvs = state.conversations.map((conv) => {
-             if (conv.id === conversationId) {
-                const updatedMessages = [...conv.messages];
-                if (updatedMessages.length > 0) {
-                  const lastMsg = updatedMessages[updatedMessages.length - 1];
-                  updatedMessages[updatedMessages.length - 1] = {
-                    ...lastMsg,
-                    content: lastMsg.content + content
-                  };
-                }
-                return { ...conv, messages: updatedMessages };
-             }
-             return conv;
-           });
-           return { conversations: updatedConvs };
+          const updatedConvs = state.conversations.map((conv) => {
+            if (conv.id === conversationId) {
+              const updatedMessages = [...conv.messages];
+              if (updatedMessages.length > 0) {
+                const lastMsg = updatedMessages[updatedMessages.length - 1];
+                updatedMessages[updatedMessages.length - 1] = {
+                  ...lastMsg,
+                  content: lastMsg.content + content
+                };
+              }
+              return { ...conv, messages: updatedMessages };
+            }
+            return conv;
+          });
+          return { conversations: updatedConvs };
         });
       },
 
@@ -104,21 +130,64 @@ export const useChatStore = create<ChatState>()(
       toggleSidebar: () => set((state) => ({ isSidebarOpen: !state.isSidebarOpen })),
       setSidebarOpen: (isOpen) => set({ isSidebarOpen: isOpen }),
       setSelectedModel: (model) => set({ selectedModel: model }),
+      setSearchQuery: (query) => set({ searchQuery: query }),
+      
       deleteConversation: (id) => set((state) => {
-         const filtered = state.conversations.filter(c => c.id !== id);
-         return {
-           conversations: filtered,
-           currentConversationId: state.currentConversationId === id 
-              ? (filtered.length > 0 ? filtered[0].id : null) 
-              : state.currentConversationId
-         };
-      })
+        const filtered = state.conversations.filter(c => c.id !== id);
+        return {
+          conversations: filtered,
+          currentConversationId: state.currentConversationId === id 
+            ? (filtered.length > 0 ? filtered[0].id : null) 
+            : state.currentConversationId
+        };
+      }),
+
+      createFolder: (name, icon = '📁') => {
+        const newFolder: Folder = {
+          id: Date.now().toString(),
+          name,
+          icon,
+          order: get().folders.length
+        };
+        set({ folders: [...get().folders, newFolder] });
+      },
+
+      deleteFolder: (id) => {
+        // Move all conversations in this folder to root (null)
+        const updatedConvs = get().conversations.map(conv => {
+          if (conv.folderId === id) {
+            return { ...conv, folderId: null };
+          }
+          return conv;
+        });
+        set({
+          folders: get().folders.filter(f => f.id !== id),
+          conversations: updatedConvs
+        });
+      },
+
+      renameFolder: (id, name) => {
+        set({
+          folders: get().folders.map(f => 
+            f.id === id ? { ...f, name } : f
+          )
+        });
+      },
+
+      moveToFolder: (conversationId, folderId) => {
+        set({
+          conversations: get().conversations.map(conv =>
+            conv.id === conversationId ? { ...conv, folderId } : conv
+          )
+        });
+      }
     }),
     {
-      name: 'aiham_conversations_v2', // unique name
+      name: 'aiham_conversations_v3',
       partialize: (state) => ({ 
         conversations: state.conversations, 
-        selectedModel: state.selectedModel 
+        selectedModel: state.selectedModel,
+        folders: state.folders
       }),
     }
   )
