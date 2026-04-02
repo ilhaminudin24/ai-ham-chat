@@ -60,6 +60,18 @@
   margin-bottom: 4px;
 }
 
+.copyActions {
+  display: flex;
+  gap: 6px;
+  opacity: 0;
+  transition: opacity var(--transition-fast);
+}
+
+.messageContainer:hover .copyActions,
+.copyActions:focus-within {
+  opacity: 1;
+}
+
 .copyTextBtn {
   background: transparent;
   border: 1px solid var(--border-light);
@@ -72,18 +84,31 @@
   gap: 4px;
   font-size: 0.75rem;
   transition: all var(--transition-fast);
-  opacity: 0;
-}
-
-.messageContainer:hover .copyTextBtn,
-.copyTextBtn:focus {
-  opacity: 1;
 }
 
 .copyTextBtn:hover {
   background: var(--bg-input-hover);
   color: var(--text-primary);
   border-color: var(--text-secondary);
+}
+
+.copyTableBtn {
+  background: transparent;
+  border: 1px solid var(--accent-brand);
+  border-radius: 6px;
+  padding: 4px 8px;
+  color: var(--accent-brand);
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  font-size: 0.75rem;
+  transition: all var(--transition-fast);
+}
+
+.copyTableBtn:hover {
+  background: var(--accent-brand);
+  color: white;
 }
 
 .textContent {
