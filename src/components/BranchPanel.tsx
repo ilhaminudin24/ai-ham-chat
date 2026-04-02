@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { X, GitBranch, Plus, Trash2 } from 'lucide-react';
+import { X, GitBranch, Plus, Trash2, Check, ArrowRight } from 'lucide-react';
 import { useChatStore } from '../store/chatStore';
 import styles from './BranchPanel.module.css';
 
@@ -22,6 +22,7 @@ export const BranchPanel: React.FC<BranchPanelProps> = ({ isOpen, onClose }) => 
   
   const currentConv = conversations.find(c => c.id === currentConversationId);
   const branches = currentConv?.branches || [];
+  const activeBranchId = currentConv?.activeBranchId;
 
   const handleCreateBranch = () => {
     if (!currentConv || !newBranchName.trim()) return;
@@ -45,7 +46,7 @@ export const BranchPanel: React.FC<BranchPanelProps> = ({ isOpen, onClose }) => 
 
   const handleDeleteBranch = (branchId: string, e: React.MouseEvent) => {
     e.stopPropagation();
-    if (currentConversationId && confirm('Delete this branch?')) {
+    if (currentConversationId && confirm('Delete this branch? This cannot be undone.')) {
       deleteBranch(currentConversationId, branchId);
     }
   };
@@ -71,39 +72,54 @@ export const BranchPanel: React.FC<BranchPanelProps> = ({ isOpen, onClose }) => 
             <p className={styles.empty}>No conversation selected</p>
           ) : (
             <>
+              {/* Current branch status */}
+              {activeBranchId ? (
+                <div className={styles.currentStatus}>
+                  <span className={styles.statusLabel}>Currently on:</span>
+                  <span className={styles.currentBranchName}>🌿 {activeBranchId && branches.find(b => b.id === activeBranchId)?.name}</span>
+                </div>
+              ) : (
+                <div className={styles.currentStatus}>
+                  <span className={styles.statusLabel}>Currently on:</span>
+                  <span className={styles.currentBranchName}>💬 Main Thread</span>
+                </div>
+              )}
+              
               <p className={styles.description}>
-                Create branches to explore different directions without losing your main conversation.
+                Branches let you explore different directions without losing your original conversation.
               </p>
               
-              {/* Main thread (no branch) */}
+              {/* Main thread option */}
               <div 
-                className={`${styles.branchItem} ${!currentConv.activeBranchId ? styles.active : ''}`}
-                onClick={() => {
-                  if (currentConversationId) {
-                    switchBranch(currentConversationId, '');
-                  }
-                  onClose();
-                }}
+                className={`${styles.branchItem} ${!activeBranchId ? styles.active : ''}`}
+                onClick={() => handleSwitchBranch('')}
               >
                 <div className={styles.branchIcon}>💬</div>
                 <div className={styles.branchInfo}>
                   <div className={styles.branchName}>Main Thread</div>
                   <div className={styles.branchMeta}>{currentConv.messages.length} messages</div>
                 </div>
+                {!activeBranchId && <Check size={16} className={styles.checkIcon} />}
               </div>
               
               {/* Existing branches */}
+              {branches.length > 0 && (
+                <div className={styles.sectionTitle}>Your Branches</div>
+              )}
               {branches.map(branch => (
                 <div 
                   key={branch.id}
-                  className={`${styles.branchItem} ${currentConv.activeBranchId === branch.id ? styles.active : ''}`}
+                  className={`${styles.branchItem} ${activeBranchId === branch.id ? styles.active : ''}`}
                   onClick={() => handleSwitchBranch(branch.id)}
                 >
                   <div className={styles.branchIcon}>🌿</div>
                   <div className={styles.branchInfo}>
                     <div className={styles.branchName}>{branch.name}</div>
-                    <div className={styles.branchMeta}>{branch.messages.length} messages</div>
+                    <div className={styles.branchMeta}>
+                      {branch.messages.length} messages • forked from message #{branch.parentMessageIndex + 1}
+                    </div>
                   </div>
+                  {activeBranchId === branch.id && <Check size={16} className={styles.checkIcon} />}
                   <button 
                     className={styles.deleteBtn}
                     onClick={(e) => handleDeleteBranch(branch.id, e)}
@@ -117,15 +133,19 @@ export const BranchPanel: React.FC<BranchPanelProps> = ({ isOpen, onClose }) => 
               {/* Create new branch */}
               {showNewBranch ? (
                 <div className={styles.newBranchForm}>
+                  <label className={styles.formLabel}>New branch name</label>
                   <input
                     type="text"
-                    placeholder="Branch name..."
+                    placeholder="e.g., Try alternative approach"
                     value={newBranchName}
                     onChange={(e) => setNewBranchName(e.target.value)}
                     onKeyDown={(e) => e.key === 'Enter' && handleCreateBranch()}
                     autoFocus
                     className={styles.newBranchInput}
                   />
+                  <p className={styles.formHint}>
+                    <ArrowRight size={12} /> Branch will start from your last message
+                  </p>
                   <div className={styles.newBranchActions}>
                     <button 
                       onClick={() => setShowNewBranch(false)}
@@ -138,7 +158,7 @@ export const BranchPanel: React.FC<BranchPanelProps> = ({ isOpen, onClose }) => 
                       disabled={!newBranchName.trim()}
                       className={styles.createBtn}
                     >
-                      Create
+                      Create Branch
                     </button>
                   </div>
                 </div>
@@ -148,7 +168,7 @@ export const BranchPanel: React.FC<BranchPanelProps> = ({ isOpen, onClose }) => 
                   onClick={() => setShowNewBranch(true)}
                 >
                   <Plus size={16} />
-                  New Branch
+                  Create New Branch
                 </button>
               )}
             </>

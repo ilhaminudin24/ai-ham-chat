@@ -127,6 +127,23 @@
   background: var(--bg-input-hover);
 }
 
+.branchBtn {
+  background: transparent;
+  border: 1px solid var(--border-light);
+  border-radius: 6px;
+  padding: 4px 8px;
+  cursor: pointer;
+  font-size: 0.75rem;
+  transition: all var(--transition-fast);
+  opacity: 0.6;
+}
+
+.branchBtn:hover {
+  opacity: 1;
+  background: rgba(16, 185, 129, 0.15);
+  border-color: rgba(16, 185, 129, 0.5);
+}
+
 .textContent {
   font-size: 0.95rem;
   line-height: 1.6;

@@ -83,7 +83,8 @@ const ChatArea: React.FC<ChatAreaProps> = ({ onOpenSettings }) => {
     setCurrentConversation,
     setInputText,
     addTag,
-    removeTag
+    removeTag,
+    createBranch
   } = useChatStore();
 
   const { resolvedTheme } = useTheme();
@@ -122,6 +123,7 @@ const ChatArea: React.FC<ChatAreaProps> = ({ onOpenSettings }) => {
   
   const currentConversation = conversations.find(c => c.id === currentConversationId);
   const messages = currentConversation?.messages || [];
+  const activeBranch = currentConversation?.branches?.find(b => b.id === currentConversation.activeBranchId);
 
   // Recent conversations for welcome screen
   const recentConversations = useMemo(() => {
@@ -255,6 +257,13 @@ const ChatArea: React.FC<ChatAreaProps> = ({ onOpenSettings }) => {
     }
   };
 
+  const handleBranchFromMessage = (msgIndex: number) => {
+    if (!currentConversationId || !currentConversation) return;
+    const branchName = `Branch from #${msgIndex + 1}`;
+    createBranch(currentConversationId, branchName, msgIndex);
+    setShowBranchPanel(true);
+  };
+
   const handleCopyMarkdown = useCallback(async () => {
     if (!currentConversation) return;
     const text = formatConversationAsMarkdown(currentConversation.title, currentConversation.messages);
@@ -327,6 +336,11 @@ const ChatArea: React.FC<ChatAreaProps> = ({ onOpenSettings }) => {
           <span className={styles.headerTitle}>
             {currentConversation?.title || 'AI-HAM Chat'}
           </span>
+          {activeBranch && (
+            <span className={styles.branchBadge} onClick={() => setShowBranchPanel(true)} title="Click to manage branches">
+              🌿 {activeBranch.name}
+            </span>
+          )}
           {currentConversation && (
             <button className={styles.renameBtn} onClick={() => setShowRenameModal(true)} title="Rename chat">✏️</button>
           )}
@@ -446,7 +460,9 @@ const ChatArea: React.FC<ChatAreaProps> = ({ onOpenSettings }) => {
                 <MessageBubble 
                   key={idx} 
                   message={msg}
+                  messageIndex={idx}
                   onEdit={msg.role === 'user' ? () => handleEditMessage(idx) : undefined}
+                  onBranch={msg.role === 'user' ? (branchIdx) => handleBranchFromMessage(branchIdx) : undefined}
                   isLastAI={isLastAI}
                   onRegenerate={isLastAI ? handleRegenerate : undefined}
                   regenerationCount={isLastAI ? regenCount : undefined}

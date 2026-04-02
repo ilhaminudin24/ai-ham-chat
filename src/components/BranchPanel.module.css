@@ -106,6 +106,42 @@
   background: rgba(194, 149, 91, 0.1);
 }
 
+.currentStatus {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 10px 14px;
+  background: rgba(16, 185, 129, 0.1);
+  border: 1px solid rgba(16, 185, 129, 0.3);
+  border-radius: 10px;
+  margin-bottom: 14px;
+}
+
+.statusLabel {
+  font-size: 0.8rem;
+  color: var(--text-secondary);
+}
+
+.currentBranchName {
+  font-size: 0.85rem;
+  font-weight: 600;
+  color: var(--accent-color, #10b981);
+}
+
+.sectionTitle {
+  font-size: 0.75rem;
+  font-weight: 600;
+  color: var(--text-muted);
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  margin: 12px 0 8px;
+}
+
+.checkIcon {
+  color: var(--accent-color, #10b981);
+  flex-shrink: 0;
+}
+
 .branchIcon {
   font-size: 1.2rem;
   width: 32px;
@@ -178,10 +214,27 @@
 }
 
 .newBranchForm {
-  padding: 12px;
+  padding: 14px;
   background: var(--bg-input);
   border: 1px solid var(--accent-brand);
   border-radius: 10px;
+}
+
+.formLabel {
+  display: block;
+  font-size: 0.8rem;
+  font-weight: 600;
+  color: var(--text-secondary);
+  margin-bottom: 8px;
+}
+
+.formHint {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  font-size: 0.75rem;
+  color: var(--text-muted);
+  margin: 6px 0 10px;
 }
 
 .newBranchInput {

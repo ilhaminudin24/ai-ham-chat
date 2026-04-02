@@ -18,7 +18,9 @@ const MODELS = [
 
 interface Props {
   message: Message;
+  messageIndex?: number;
   onEdit?: () => void;
+  onBranch?: (messageIndex: number) => void;
   isLastAI?: boolean;
   onRegenerate?: (modelId?: string) => void;
   regenerationCount?: number;
@@ -99,7 +101,7 @@ const CodeBlock = ({ node, inline, className, children, ...props }: any) => {
   );
 };
 
-export const MessageBubble: React.FC<Props> = ({ message, onEdit, isLastAI, onRegenerate, regenerationCount }) => {
+export const MessageBubble: React.FC<Props> = ({ message, messageIndex = 0, onEdit, onBranch, isLastAI, onRegenerate, regenerationCount }) => {
   const isUser = message.role === 'user';
   const [copied, setCopied] = useState(false);
   const [tableCopied, setTableCopied] = useState(false);
@@ -164,6 +166,11 @@ export const MessageBubble: React.FC<Props> = ({ message, onEdit, isLastAI, onRe
             {isUser && onEdit && (
               <button onClick={onEdit} className={styles.editBtn} title="Edit message">
                 ✏️
+              </button>
+            )}
+            {isUser && onBranch && (
+              <button onClick={() => onBranch(messageIndex)} className={styles.branchBtn} title="Branch from this message">
+                🌿
               </button>
             )}
           </div>
