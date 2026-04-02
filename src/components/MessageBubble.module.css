@@ -176,6 +176,47 @@
   margin: 12px 0;
 }
 
+/* Table wrapper for horizontal scroll on mobile */
+.textContent :global(table) {
+  display: block;
+  overflow-x: auto;
+  white-space: nowrap;
+  max-width: 100%;
+  margin: 12px 0;
+  border-collapse: collapse;
+}
+
+.textContent :global(table) :global(td),
+.textContent :global(table) :global(th) {
+  padding: 8px 12px;
+  border: 1px solid var(--border-light);
+  text-align: left;
+  font-size: 0.9rem;
+}
+
+.textContent :global(table) :global(th) {
+  background-color: var(--bg-input);
+  font-weight: 600;
+}
+
+@media (max-width: 768px) {
+  .textContent :global(table) {
+    font-size: 0.85rem;
+  }
+  
+  .textContent :global(table) :global(td),
+  .textContent :global(table) :global(th) {
+    padding: 6px 8px;
+  }
+}
+
+/* Ensure pre/code blocks are responsive */
+.textContent :global(pre) {
+  max-width: 100%;
+  overflow-x: auto;
+  border-radius: var(--radius-md);
+}
+
 /* Code block styles */
 .codeHeader {
   display: flex;

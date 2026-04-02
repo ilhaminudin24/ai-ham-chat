@@ -42,6 +42,10 @@
   --sidebar-width: 280px;
   --content-max-width: 850px;
   
+  /* Mobile responsive */
+  --sidebar-width-mobile: 100vw;
+  --content-max-width-mobile: 100%;
+  
   /* Utilities */
   --transition-fast: 0.15s ease-in-out;
   --transition-normal: 0.3s cubic-bezier(0.2, 0.8, 0.2, 1);
@@ -89,5 +93,21 @@ body {
   }
   to {
     opacity: 1;
+  }
+}
+
+/* Mobile Responsive */
+@media (max-width: 768px) {
+  :root {
+    --sidebar-width: 100vw;
+    --content-max-width: 100%;
+  }
+  
+  body {
+    font-size: 14px;
+  }
+  
+  .app-container {
+    flex-direction: column;
   }
 }

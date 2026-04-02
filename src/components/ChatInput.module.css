@@ -150,3 +150,19 @@
 .removeImgBtn:hover {
   transform: scale(1.1);
 }
+
+/* Mobile responsive adjustments */
+@media (max-width: 768px) {
+  .inputContainer {
+    padding: 12px 16px 20px;
+  }
+  
+  .inputBox {
+    border-radius: var(--radius-md);
+    padding: 8px 10px;
+  }
+  
+  .textarea {
+    font-size: 16px; /* Prevent zoom on iOS */
+  }
+}
