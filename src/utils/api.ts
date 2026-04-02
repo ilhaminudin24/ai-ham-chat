@@ -53,22 +53,30 @@ export const sendChatRequest = async (
         const contentParts: any[] = [];
         const textContent = m.content || '';
 
-        if (images.length > 0) {
-          contentParts.push(
-            { type: 'text', text: textContent || '[Image]' },
-            ...images.map(url => ({ type: 'image_url', image_url: { url } }))
-          );
-        } else {
-          // No images — start with text, append document attachments as base64
-          let textWithDocs = textContent;
+        // Only use array content format if there are images OR documents
+        if (images.length > 0 || docFiles.length > 0) {
+          if (textContent || images.length > 0) {
+            contentParts.push(
+              { type: 'text', text: textContent || '[Image]' },
+              ...images.map(url => ({ type: 'image_url', image_url: { url } }))
+            );
+          }
+          // Append documents as base64 text
           for (const doc of docFiles) {
             const ext = doc.name.split('.').pop()?.toUpperCase() || 'FILE';
-            textWithDocs += `\n\n[Attached file: ${doc.name} (${ext}) — base64 encoded PDF]\n\`\`\`\n${doc.dataUrl}\n\`\`\``;
+            const docText = `[Attached file: ${doc.name} (${ext}) — base64 encoded]\n\`\`\`\n${doc.dataUrl}\n\`\`\``;
+            if (contentParts.length === 0) {
+              contentParts.push({ type: 'text', text: docText });
+            } else {
+              // Append to last text part
+              contentParts[0].text += '\n\n' + docText;
+            }
           }
-          contentParts.push({ type: 'text', text: textWithDocs });
+          return { role: m.role, content: contentParts };
         }
 
-        return { role: m.role, content: contentParts.length === 1 ? contentParts[0] : contentParts };
+        // No images, no documents — simple string content
+        return { role: m.role, content: m.content };
       })
     ];
 
