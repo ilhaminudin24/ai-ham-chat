@@ -1,5 +1,6 @@
 import { useChatStore, type Message, type FileAttachment } from '../store/chatStore';
 import { generateSkillsSystemPrompt } from './skillApi';
+import { extractTextFromPdf } from './pdf';
 
 // Accessing injected config from server or Vite env fallback
 const API_TOKEN = (window as any).API_TOKEN || import.meta.env.VITE_API_TOKEN || '';
@@ -37,9 +38,9 @@ export const sendChatRequest = async (
     if (skillsPrompt) fullSystemPrompt += `\n\n${skillsPrompt}`;
 
     // Map to API format - add system prompt at the beginning
-    const apiMessages = [
-      { role: 'system', content: fullSystemPrompt },
-      ...messages.map((m) => {
+    // Process messages async to extract PDF text
+    const processedMessages = await Promise.all(
+      messages.map(async (m) => {
         // Collect all images from both legacy and new format
         const images: string[] = [];
         const docFiles: FileAttachment[] = [];
@@ -59,21 +60,30 @@ export const sendChatRequest = async (
             { type: 'text', text: textContent || '[Image]' },
             ...images.map(url => ({ type: 'image_url', image_url: { url } }))
           );
-          // Append documents as base64 text (inside array content)
+          // Extract text from PDF documents and append
           for (const doc of docFiles) {
             const ext = doc.name.split('.').pop()?.toUpperCase() || 'FILE';
-            const docText = `\n\n[Attached file: ${doc.name} (${ext}) — base64 encoded]\n\`\`\`\n${doc.dataUrl}\n\`\`\``;
-            contentParts[0].text += docText;
+            if (ext === 'PDF') {
+              const pdfText = await extractTextFromPdf(doc.dataUrl);
+              contentParts[0].text += `\n\n[PDF Content from ${doc.name}]:\n${pdfText}`;
+            } else {
+              contentParts[0].text += `\n\n[Attached file: ${doc.name} (${ext}) — base64 encoded]\n\`\`\`\n${doc.dataUrl}\n\`\`\``;
+            }
           }
           return { role: m.role, content: contentParts };
         }
 
-        // No images — for documents, embed as base64 text; for text only, use string
+        // No images — for documents, extract text; for text only, use string
         if (docFiles.length > 0) {
           let textWithDocs = textContent;
           for (const doc of docFiles) {
             const ext = doc.name.split('.').pop()?.toUpperCase() || 'FILE';
-            textWithDocs += `\n\n[Attached file: ${doc.name} (${ext}) — base64 encoded]\n\`\`\`\n${doc.dataUrl}\n\`\`\``;
+            if (ext === 'PDF') {
+              const pdfText = await extractTextFromPdf(doc.dataUrl);
+              textWithDocs += `\n\n[PDF Content from ${doc.name}]:\n${pdfText}`;
+            } else {
+              textWithDocs += `\n\n[Attached file: ${doc.name} (${ext}) — base64 encoded]\n\`\`\`\n${doc.dataUrl}\n\`\`\``;
+            }
           }
           return { role: m.role, content: textWithDocs };
         }
@@ -81,6 +91,11 @@ export const sendChatRequest = async (
         // No images, no documents — simple string content
         return { role: m.role, content: m.content };
       })
+    );
+
+    const apiMessages = [
+      { role: 'system', content: fullSystemPrompt },
+      ...processedMessages
     ];
 
     store.setStreamingPhase('thinking');
