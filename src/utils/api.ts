@@ -1,4 +1,4 @@
-import { useChatStore, type Message } from '../store/chatStore';
+import { useChatStore, type Message, type FileAttachment } from '../store/chatStore';
 import { generateSkillsSystemPrompt } from './skillApi';
 
 // Accessing injected config from server or Vite env fallback
@@ -42,21 +42,33 @@ export const sendChatRequest = async (
       ...messages.map((m) => {
         // Collect all images from both legacy and new format
         const images: string[] = [];
+        const docFiles: FileAttachment[] = [];
         if (m.image) images.push(m.image);
         if (m.files) {
           m.files.filter(f => f.isImage).forEach(f => images.push(f.dataUrl));
+          m.files.filter(f => !f.isImage).forEach(f => docFiles.push(f));
         }
-        
+
+        // Build content: text + images + document attachments
+        const contentParts: any[] = [];
+        const textContent = m.content || '';
+
         if (images.length > 0) {
-          return {
-            role: m.role,
-            content: [
-              { type: 'text', text: m.content || '[Image]' },
-              ...images.map(url => ({ type: 'image_url', image_url: { url } }))
-            ]
-          };
+          contentParts.push(
+            { type: 'text', text: textContent || '[Image]' },
+            ...images.map(url => ({ type: 'image_url', image_url: { url } }))
+          );
+        } else {
+          // No images — start with text, append document attachments as base64
+          let textWithDocs = textContent;
+          for (const doc of docFiles) {
+            const ext = doc.name.split('.').pop()?.toUpperCase() || 'FILE';
+            textWithDocs += `\n\n[Attached file: ${doc.name} (${ext}) — base64 encoded PDF]\n\`\`\`\n${doc.dataUrl}\n\`\`\``;
+          }
+          contentParts.push({ type: 'text', text: textWithDocs });
         }
-        return { role: m.role, content: m.content };
+
+        return { role: m.role, content: contentParts.length === 1 ? contentParts[0] : contentParts };
       })
     ];
 

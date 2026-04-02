@@ -151,17 +151,18 @@ const ChatInput: React.FC<ChatInputProps> = ({ onShowTemplates, onShowToast }) =
     const items = e.clipboardData?.items;
     if (!items) return;
     
-    const imageFiles: File[] = [];
+    const pastedFiles: File[] = [];
     for (let i = 0; i < items.length; i++) {
-      if (items[i].type.startsWith('image/')) {
-        const file = items[i].getAsFile();
-        if (file) imageFiles.push(file);
+      // Collect all files (images, PDFs, and other accepted types)
+      const file = items[i].getAsFile();
+      if (file) {
+        pastedFiles.push(file);
       }
     }
     
-    if (imageFiles.length > 0) {
-      e.preventDefault(); // prevent pasting image as text
-      addFiles(imageFiles);
+    if (pastedFiles.length > 0) {
+      e.preventDefault(); // prevent pasting as text
+      addFiles(pastedFiles);
     }
   }, [addFiles]);
 
