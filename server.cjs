@@ -6,7 +6,13 @@ const PORT = 3000;
 const STATIC_DIR = path.join(__dirname, 'dist');
 const SKILLS_DIR = path.join(__dirname, 'skills');
 const SKILLS_STATE_FILE = path.join(SKILLS_DIR, 'skills-state.json');
+const SHARED_DIR = path.join(__dirname, 'shared');
 const API_TOKEN = process.env.GATEWAY_TOKEN;
+
+// Ensure shared directory exists
+if (!fs.existsSync(SHARED_DIR)) {
+    fs.mkdirSync(SHARED_DIR, { recursive: true });
+}
 
 const MIME_TYPES = {
     '.html': 'text/html',
@@ -263,10 +269,87 @@ ${data.content || parsed.content}
         return;
     }
     
+    // POST /api/shared - Create shared link
+    if (method === 'POST' && pathname === '/api/shared') {
+        let body = '';
+        req.on('data', chunk => body += chunk);
+        req.on('end', () => {
+            try {
+                const data = JSON.parse(body);
+                const shareId = generateShareId();
+                const sharedData = {
+                    id: shareId,
+                    title: data.title || 'Shared Chat',
+                    messages: data.messages || [],
+                    sharedBy: data.sharedBy || 'Anonymous',
+                    createdAt: new Date().toISOString()
+                };
+                
+                fs.writeFileSync(
+                    path.join(SHARED_DIR, shareId + '.json'),
+                    JSON.stringify(sharedData, null, 2)
+                );
+                
+                res.writeHead(200, { 'Content-Type': 'application/json' });
+                res.end(JSON.stringify({ shareId, url: '/share/' + shareId }));
+            } catch (e) {
+                res.writeHead(400, { 'Content-Type': 'application/json' });
+                res.end(JSON.stringify({ error: e.message }));
+            }
+        });
+        return;
+    }
+    
+    // GET /api/shared/:id - Get shared conversation
+    if (method === 'GET' && pathname.startsWith('/api/shared/')) {
+        const shareId = pathname.split('/')[3];
+        const filePath = path.join(SHARED_DIR, shareId + '.json');
+        
+        if (!fs.existsSync(filePath)) {
+            res.writeHead(404, { 'Content-Type': 'application/json' });
+            res.end(JSON.stringify({ error: 'Shared conversation not found' }));
+            return;
+        }
+        
+        try {
+            const data = JSON.parse(fs.readFileSync(filePath, 'utf8'));
+            res.writeHead(200, { 'Content-Type': 'application/json' });
+            res.end(JSON.stringify(data));
+        } catch (e) {
+            res.writeHead(500, { 'Content-Type': 'application/json' });
+            res.end(JSON.stringify({ error: 'Failed to read shared conversation' }));
+        }
+        return;
+    }
+    
+    // DELETE /api/shared/:id - Delete shared conversation
+    if (method === 'DELETE' && pathname.startsWith('/api/shared/')) {
+        const shareId = pathname.split('/')[3];
+        const filePath = path.join(SHARED_DIR, shareId + '.json');
+        
+        if (fs.existsSync(filePath)) {
+            fs.unlinkSync(filePath);
+        }
+        
+        res.writeHead(200, { 'Content-Type': 'application/json' });
+        res.end(JSON.stringify({ success: true }));
+        return;
+    }
+    
     // 404
     res.writeHead(404, { 'Content-Type': 'application/json' });
     res.end(JSON.stringify({ error: 'API endpoint not found' }));
 };
+
+// Generate random share ID
+function generateShareId() {
+    const chars = 'abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789';
+    let result = '';
+    for (let i = 0; i < 8; i++) {
+        result += chars.charAt(Math.floor(Math.random() * chars.length));
+    }
+    return result;
+}
 
 const server = http.createServer((req, res) => {
     const urlPath = req.url.split('?')[0];

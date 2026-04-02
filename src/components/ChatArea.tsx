@@ -1,11 +1,14 @@
 import React, { useEffect, useRef, useState } from 'react';
-import { Menu, Bot, Settings, FileText } from 'lucide-react';
+import { Menu, Bot, Settings, FileText, Link, GitBranch, BarChart3 } from 'lucide-react';
 import { useChatStore } from '../store/chatStore';
 import { MessageBubble } from './MessageBubble';
 import ChatInput from './ChatInput';
 import { RenameModal } from './RenameModal';
 import { EditMessageModal } from './EditMessageModal';
 import { TemplatesPanel } from './TemplatesPanel';
+import { SharedLinkModal } from './SharedLinkModal';
+import { BranchPanel } from './BranchPanel';
+import { UsageStatsPanel } from './UsageStatsPanel';
 import styles from './ChatArea.module.css';
 
 interface ChatAreaProps {
@@ -59,6 +62,9 @@ const ChatArea: React.FC<ChatAreaProps> = ({ onOpenSettings }) => {
   const [showRenameModal, setShowRenameModal] = useState(false);
   const [editingMessage, setEditingMessage] = useState<{convId: string, msgIndex: number, content: string} | null>(null);
   const [showTemplates, setShowTemplates] = useState(false);
+  const [showSharedLink, setShowSharedLink] = useState(false);
+  const [showBranchPanel, setShowBranchPanel] = useState(false);
+  const [showUsageStats, setShowUsageStats] = useState(false);
 
   const scrollRef = useRef<HTMLDivElement>(null);
   const prevStreamingRef = useRef(isStreaming);
@@ -100,13 +106,7 @@ const ChatArea: React.FC<ChatAreaProps> = ({ onOpenSettings }) => {
 
   const handleSaveEdit = (newContent: string) => {
     if (editingMessage) {
-      // Update the message content
       updateMessageContent(editingMessage.convId, editingMessage.msgIndex, newContent);
-      
-      // Remove all messages after the edited one (regenerate from that point)
-      // Actually, for simplicity, let's just update and let user manually resend
-      
-      // Clear the editing state
       setEditingMessage(null);
     }
   };
@@ -133,6 +133,31 @@ const ChatArea: React.FC<ChatAreaProps> = ({ onOpenSettings }) => {
         </div>
         
         <div className={styles.headerRight}>
+          {currentConversation && messages.length > 0 && (
+            <>
+              <button 
+                className={styles.actionBtn}
+                onClick={() => setShowBranchPanel(true)}
+                title="Branches"
+              >
+                <GitBranch size={16} />
+              </button>
+              <button 
+                className={styles.actionBtn}
+                onClick={() => setShowSharedLink(true)}
+                title="Share"
+              >
+                <Link size={16} />
+              </button>
+              <button 
+                className={styles.actionBtn}
+                onClick={() => setShowUsageStats(true)}
+                title="Usage Stats"
+              >
+                <BarChart3 size={16} />
+              </button>
+            </>
+          )}
           <select 
             className={styles.modelSelect}
             value={selectedModel}
@@ -206,6 +231,21 @@ const ChatArea: React.FC<ChatAreaProps> = ({ onOpenSettings }) => {
       <TemplatesPanel
         isOpen={showTemplates}
         onClose={() => setShowTemplates(false)}
+      />
+      
+      <SharedLinkModal
+        isOpen={showSharedLink}
+        onClose={() => setShowSharedLink(false)}
+      />
+      
+      <BranchPanel
+        isOpen={showBranchPanel}
+        onClose={() => setShowBranchPanel(false)}
+      />
+      
+      <UsageStatsPanel
+        isOpen={showUsageStats}
+        onClose={() => setShowUsageStats(false)}
       />
     </main>
   );

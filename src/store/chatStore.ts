@@ -8,10 +8,20 @@ export interface Message {
   image?: string | null;
 }
 
+export interface Branch {
+  id: string;
+  name: string;
+  messages: Message[];
+  createdAt: string;
+  parentMessageIndex: number;
+}
+
 export interface Conversation {
   id: string;
   title: string;
   messages: Message[];
+  branches: Branch[];
+  activeBranchId: string | null;
   createdAt: string;
   folderId: string | null;
   isPinned: boolean;
@@ -29,6 +39,14 @@ export interface Settings {
   defaultModel: string;
 }
 
+export interface UsageStats {
+  totalMessages: number;
+  totalTokens: number;
+  totalConversations: number;
+  lastUpdated: string;
+  dailyStats: Record<string, { messages: number; tokens: number; conversations: number }>;
+}
+
 export interface ChatState {
   conversations: Conversation[];
   currentConversationId: string | null;
@@ -39,7 +57,8 @@ export interface ChatState {
   searchQuery: string;
   settings: Settings;
   activeSkills: Skill[];
-  inputText: string; // For template/quick input
+  inputText: string;
+  usageStats: UsageStats;
   
   // Actions
   createNewConversation: () => void;
@@ -80,6 +99,15 @@ export interface ChatState {
   // Edit message action
   updateMessageContent: (convId: string, msgIndex: number, newContent: string) => void;
   deleteMessage: (convId: string, msgIndex: number) => void;
+  
+  // Branch actions
+  createBranch: (convId: string, branchName: string, fromMessageIndex: number) => void;
+  switchBranch: (convId: string, branchId: string) => void;
+  deleteBranch: (convId: string, branchId: string) => void;
+  
+  // Usage stats
+  trackUsage: (tokens: number) => void;
+  getUsageStats: () => UsageStats;
 }
 
 const defaultFolders: Folder[] = [
@@ -92,6 +120,14 @@ const defaultFolders: Folder[] = [
 const defaultSettings: Settings = {
   soundEnabled: true,
   defaultModel: 'minimax/MiniMax-M2.7'
+};
+
+const defaultUsageStats: UsageStats = {
+  totalMessages: 0,
+  totalTokens: 0,
+  totalConversations: 0,
+  lastUpdated: new Date().toISOString(),
+  dailyStats: {}
 };
 
 export const useChatStore = create<ChatState>()(
@@ -107,6 +143,7 @@ export const useChatStore = create<ChatState>()(
       searchQuery: '',
       settings: defaultSettings,
       activeSkills: [],
+      usageStats: defaultUsageStats,
 
       createNewConversation: () => {
         const id = Date.now().toString();
@@ -114,6 +151,8 @@ export const useChatStore = create<ChatState>()(
           id,
           title: 'New Chat',
           messages: [],
+          branches: [],
+          activeBranchId: null,
           createdAt: new Date().toISOString(),
           folderId: null,
           isPinned: false
@@ -314,7 +353,92 @@ export const useChatStore = create<ChatState>()(
       
       setInputText: (text) => {
         set({ inputText: text });
-      }
+      },
+      
+      // Branch actions
+      createBranch: (convId, branchName, fromMessageIndex) => {
+        const conv = get().conversations.find(c => c.id === convId);
+        if (!conv) return;
+        
+        // Get messages up to and including the branch point
+        const branchMessages = conv.messages.slice(0, fromMessageIndex + 1);
+        
+        const newBranch: Branch = {
+          id: Date.now().toString(),
+          name: branchName,
+          messages: branchMessages,
+          createdAt: new Date().toISOString(),
+          parentMessageIndex: fromMessageIndex
+        };
+        
+        set({
+          conversations: get().conversations.map(c => {
+            if (c.id !== convId) return c;
+            return {
+              ...c,
+              branches: [...c.branches, newBranch],
+              messages: branchMessages // Switch to branch view
+            };
+          })
+        });
+      },
+      
+      switchBranch: (convId, branchId) => {
+        const conv = get().conversations.find(c => c.id === convId);
+        if (!conv) return;
+        
+        const branch = conv.branches.find(b => b.id === branchId);
+        if (!branch) return;
+        
+        set({
+          conversations: get().conversations.map(c => {
+            if (c.id !== convId) return c;
+            return {
+              ...c,
+              activeBranchId: branchId,
+              messages: branch.messages
+            };
+          })
+        });
+      },
+      
+      deleteBranch: (convId, branchId) => {
+        set({
+          conversations: get().conversations.map(c => {
+            if (c.id !== convId) return c;
+            return {
+              ...c,
+              branches: c.branches.filter(b => b.id !== branchId)
+            };
+          })
+        });
+      },
+      
+      // Usage stats
+      trackUsage: (tokens) => {
+        const today = new Date().toISOString().split('T')[0];
+        const stats = get().usageStats;
+        
+        set({
+          usageStats: {
+            ...stats,
+            totalMessages: stats.totalMessages + 1,
+            totalTokens: stats.totalTokens + tokens,
+            totalConversations: get().conversations.length,
+            lastUpdated: new Date().toISOString(),
+            dailyStats: {
+              ...stats.dailyStats,
+              [today]: {
+                messages: (stats.dailyStats[today]?.messages || 0) + 1,
+                tokens: (stats.dailyStats[today]?.tokens || 0) + tokens,
+                conversations: stats.dailyStats[today]?.conversations || get().conversations.length
+              }
+            }
+          }
+        });
+      },
+      
+      getUsageStats: () => get().usageStats
     }),
     {
       name: 'aiham_conversations_v4',
