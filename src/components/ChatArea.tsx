@@ -1,5 +1,5 @@
 import React, { useEffect, useRef, useState, useCallback, useMemo } from 'react';
-import { Menu, Bot, Settings, FileText, Link, GitBranch, BarChart3, ClipboardCopy, Brain } from 'lucide-react';
+import { Menu, Bot, Settings, FileText, Link, GitBranch, BarChart3, ClipboardCopy, Brain, Sun, Moon, Search, Tag } from 'lucide-react';
 import { useChatStore } from '../store/chatStore';
 import { MessageBubble } from './MessageBubble';
 import ChatInput from './ChatInput';
@@ -10,9 +10,12 @@ import { SharedLinkModal } from './SharedLinkModal';
 import { BranchPanel } from './BranchPanel';
 import { UsageStatsPanel } from './UsageStatsPanel';
 import { Toast } from './Toast';
+import { SearchBar } from './SearchBar';
+import { TagSelector } from './TagSelector';
 import { sendChatRequest } from '../utils/api';
 import { formatConversationAsMarkdown, formatConversationAsPlainText, copyToClipboard } from '../utils/clipboard';
 import { useSwipeGesture } from '../hooks/useSwipeGesture';
+import { useTheme } from '../hooks/useTheme';
 import styles from './ChatArea.module.css';
 
 interface ChatAreaProps {
@@ -27,22 +30,35 @@ const MODELS = [
   { id: 'google-gemini-cli/gemini-3.1-pro-preview', display: 'Gemini 3.1 Pro' },
 ];
 
-// Simple notification sound using Web Audio API
+const WELCOME_STARTERS = [
+  { icon: '💡', label: 'Brainstorm ideas', prompt: 'Help me brainstorm creative ideas for ' },
+  { icon: '📝', label: 'Write content', prompt: 'Write a professional email about ' },
+  { icon: '🐛', label: 'Debug code', prompt: 'Help me debug this code:\n```\n' },
+  { icon: '📊', label: 'Analyze data', prompt: 'Analyze the following data and provide insights:\n' },
+  { icon: '🎯', label: 'Plan a project', prompt: 'Help me create a project plan for ' },
+  { icon: '🌐', label: 'Translate text', prompt: 'Translate the following to English:\n' },
+];
+
+const getGreeting = () => {
+  const hour = new Date().getHours();
+  if (hour < 12) return 'Good morning, Boss Ilham! ☀️';
+  if (hour < 17) return 'Good afternoon, Boss Ilham! 🌤️';
+  if (hour < 21) return 'Good evening, Boss Ilham! 🌅';
+  return 'Good night, Boss Ilham! 🌙';
+};
+
+// Simple notification sound
 const playNotificationSound = () => {
   try {
     const audioContext = new (window.AudioContext || (window as unknown as { webkitAudioContext: typeof AudioContext }).webkitAudioContext)();
     const oscillator = audioContext.createOscillator();
     const gainNode = audioContext.createGain();
-    
     oscillator.connect(gainNode);
     gainNode.connect(audioContext.destination);
-    
     oscillator.frequency.value = 800;
     oscillator.type = 'sine';
-    
     gainNode.gain.setValueAtTime(0.3, audioContext.currentTime);
     gainNode.gain.exponentialRampToValueAtTime(0.01, audioContext.currentTime + 0.3);
-    
     oscillator.start(audioContext.currentTime);
     oscillator.stop(audioContext.currentTime + 0.3);
   } catch (e) {
@@ -62,8 +78,15 @@ const ChatArea: React.FC<ChatAreaProps> = ({ onOpenSettings }) => {
     renameConversation,
     updateMessageContent,
     streamingPhase,
-    regenerateLastResponse
+    regenerateLastResponse,
+    setTheme,
+    setCurrentConversation,
+    setInputText,
+    addTag,
+    removeTag
   } = useChatStore();
+
+  const { resolvedTheme } = useTheme();
 
   const [showRenameModal, setShowRenameModal] = useState(false);
   const [editingMessage, setEditingMessage] = useState<{convId: string, msgIndex: number, content: string} | null>(null);
@@ -72,10 +95,17 @@ const ChatArea: React.FC<ChatAreaProps> = ({ onOpenSettings }) => {
   const [showBranchPanel, setShowBranchPanel] = useState(false);
   const [showUsageStats, setShowUsageStats] = useState(false);
   const [showCopyMenu, setShowCopyMenu] = useState(false);
+  const [showSearchBar, setShowSearchBar] = useState(false);
+  const [showTagSelector, setShowTagSelector] = useState(false);
 
   // Toast state
   const [showToast, setShowToast] = useState(false);
   const [toastMsg, setToastMsg] = useState('');
+
+  const showToastMsg = useCallback((msg: string) => {
+    setToastMsg(msg);
+    setShowToast(true);
+  }, []);
 
   // Regeneration count tracking
   const [regenCount, setRegenCount] = useState(1);
@@ -84,11 +114,25 @@ const ChatArea: React.FC<ChatAreaProps> = ({ onOpenSettings }) => {
   const [thinkingElapsed, setThinkingElapsed] = useState(0);
   const thinkingTimerRef = useRef<ReturnType<typeof setInterval> | null>(null);
 
+  // Search highlight state
+  const [searchHighlights, setSearchHighlights] = useState<{ msgIndex: number; matches: number[] }[]>([]);
+
   const scrollRef = useRef<HTMLDivElement>(null);
   const prevStreamingRef = useRef(isStreaming);
   
   const currentConversation = conversations.find(c => c.id === currentConversationId);
   const messages = currentConversation?.messages || [];
+
+  // Recent conversations for welcome screen
+  const recentConversations = useMemo(() => {
+    return [...conversations]
+      .sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime())
+      .slice(0, 3)
+      .filter(c => c.messages.length > 0);
+  }, [conversations]);
+
+  // Currently selected model display name
+  const currentModelDisplay = MODELS.find(m => m.id === selectedModel)?.display || selectedModel;
 
   // Find last AI message index for regenerate button
   const lastAIIndex = useMemo(() => {
@@ -98,7 +142,7 @@ const ChatArea: React.FC<ChatAreaProps> = ({ onOpenSettings }) => {
     return -1;
   }, [messages]);
 
-  // Detect if last user message has an image (for contextual thinking label)
+  // Detect if last user message has an image
   const lastUserHasImage = useMemo(() => {
     for (let i = messages.length - 1; i >= 0; i--) {
       if (messages[i].role === 'user') return !!messages[i].image;
@@ -138,7 +182,6 @@ const ChatArea: React.FC<ChatAreaProps> = ({ onOpenSettings }) => {
       }
       setThinkingElapsed(0);
     }
-
     return () => {
       if (thinkingTimerRef.current) clearInterval(thinkingTimerRef.current);
     };
@@ -159,7 +202,7 @@ const ChatArea: React.FC<ChatAreaProps> = ({ onOpenSettings }) => {
     prevStreamingRef.current = isStreaming;
   }, [isStreaming, settings.soundEnabled]);
 
-  // Ctrl+Shift+R keyboard shortcut for regenerate
+  // Ctrl+Shift+R and Ctrl+F keyboard shortcuts
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
       const isMac = navigator.platform.toUpperCase().indexOf('MAC') >= 0;
@@ -171,26 +214,35 @@ const ChatArea: React.FC<ChatAreaProps> = ({ onOpenSettings }) => {
           handleRegenerate();
         }
       }
+
+      // Ctrl+F — in-conversation search
+      if (cmdKey && e.key === 'f') {
+        e.preventDefault();
+        setShowSearchBar(true);
+      }
+
+      // Ctrl+T — add tag to current conversation
+      if (cmdKey && e.key === 't') {
+        e.preventDefault();
+        if (currentConversationId) setShowTagSelector(true);
+      }
     };
 
     document.addEventListener('keydown', handleKeyDown);
     return () => document.removeEventListener('keydown', handleKeyDown);
   }, [isStreaming, currentConversationId, lastAIIndex]);
 
+  // Reset regen count when conversation changes
+  useEffect(() => { setRegenCount(1); }, [currentConversationId]);
+
   const handleRename = (newName: string) => {
-    if (currentConversationId) {
-      renameConversation(currentConversationId, newName);
-    }
+    if (currentConversationId) renameConversation(currentConversationId, newName);
   };
 
   const handleEditMessage = (msgIndex: number) => {
     if (currentConversationId) {
       const msg = messages[msgIndex];
-      setEditingMessage({
-        convId: currentConversationId,
-        msgIndex,
-        content: msg.content
-      });
+      setEditingMessage({ convId: currentConversationId, msgIndex, content: msg.content });
     }
   };
 
@@ -201,40 +253,27 @@ const ChatArea: React.FC<ChatAreaProps> = ({ onOpenSettings }) => {
     }
   };
 
-  // Copy full conversation as markdown
   const handleCopyMarkdown = useCallback(async () => {
     if (!currentConversation) return;
     const text = formatConversationAsMarkdown(currentConversation.title, currentConversation.messages);
     const success = await copyToClipboard(text);
-    if (success) {
-      setToastMsg('Copied as Markdown!');
-      setShowToast(true);
-    }
+    if (success) showToastMsg('Copied as Markdown!');
     setShowCopyMenu(false);
   }, [currentConversation]);
 
-  // Copy full conversation as plain text
   const handleCopyPlainText = useCallback(async () => {
     if (!currentConversation) return;
     const text = formatConversationAsPlainText(currentConversation.title, currentConversation.messages);
     const success = await copyToClipboard(text);
-    if (success) {
-      setToastMsg('Copied as Plain Text!');
-      setShowToast(true);
-    }
+    if (success) showToastMsg('Copied as Plain Text!');
     setShowCopyMenu(false);
   }, [currentConversation]);
 
-  // Regenerate last AI response (optionally with a different model)
   const handleRegenerate = useCallback(async (overrideModelId?: string) => {
     if (!currentConversationId || isStreaming) return;
-    
     regenerateLastResponse(currentConversationId);
     setRegenCount(prev => prev + 1);
-
     const modelToUse = overrideModelId || selectedModel;
-    
-    // Wait a tick for state to update, then get fresh messages
     setTimeout(async () => {
       const updatedConv = useChatStore.getState().conversations.find(c => c.id === currentConversationId);
       if (updatedConv && updatedConv.messages.length > 0) {
@@ -243,10 +282,21 @@ const ChatArea: React.FC<ChatAreaProps> = ({ onOpenSettings }) => {
     }, 0);
   }, [currentConversationId, isStreaming, regenerateLastResponse, selectedModel]);
 
-  // Reset regen count when conversation changes
-  useEffect(() => {
-    setRegenCount(1);
-  }, [currentConversationId]);
+  // Handle starter click
+  const handleStarterClick = (prompt: string) => {
+    setInputText(prompt);
+  };
+
+  // Search highlight callback
+  const handleSearchHighlight = useCallback((matchIndices: { msgIndex: number; matches: number[] }[], _currentMatch: number) => {
+    setSearchHighlights(matchIndices);
+  }, []);
+
+  // Toggle theme quickly
+  const toggleTheme = () => {
+    const next = resolvedTheme === 'dark' ? 'light' : 'dark';
+    setTheme(next);
+  };
 
   // Contextual thinking phase label
   const getPhaseLabel = () => {
@@ -258,7 +308,6 @@ const ChatArea: React.FC<ChatAreaProps> = ({ onOpenSettings }) => {
     }
     return null;
   };
-
   const phaseLabel = getPhaseLabel();
 
   // Swipe peek indicator styles
@@ -277,25 +326,21 @@ const ChatArea: React.FC<ChatAreaProps> = ({ onOpenSettings }) => {
             {currentConversation?.title || 'AI-HAM Chat'}
           </span>
           {currentConversation && (
-            <button 
-              className={styles.renameBtn}
-              onClick={() => setShowRenameModal(true)}
-              title="Rename chat"
-            >
-              ✏️
-            </button>
+            <button className={styles.renameBtn} onClick={() => setShowRenameModal(true)} title="Rename chat">✏️</button>
           )}
         </div>
         
         <div className={styles.headerRight}>
           {currentConversation && messages.length > 0 && (
             <>
+              <button className={styles.actionBtn} onClick={() => setShowSearchBar(!showSearchBar)} title="Search (Ctrl+F)">
+                <Search size={16} />
+              </button>
+              <button className={styles.actionBtn} onClick={() => setShowTagSelector(true)} title="Tags (Ctrl+T)">
+                <Tag size={16} />
+              </button>
               <div className={styles.copyMenuWrapper}>
-                <button 
-                  className={styles.actionBtn}
-                  onClick={() => setShowCopyMenu(!showCopyMenu)}
-                  title="Copy conversation"
-                >
+                <button className={styles.actionBtn} onClick={() => setShowCopyMenu(!showCopyMenu)} title="Copy conversation">
                   <ClipboardCopy size={16} />
                 </button>
                 {showCopyMenu && (
@@ -305,57 +350,87 @@ const ChatArea: React.FC<ChatAreaProps> = ({ onOpenSettings }) => {
                   </div>
                 )}
               </div>
-              <button 
-                className={styles.actionBtn}
-                onClick={() => setShowBranchPanel(true)}
-                title="Branches"
-              >
+              <button className={styles.actionBtn} onClick={() => setShowBranchPanel(true)} title="Branches">
                 <GitBranch size={16} />
               </button>
-              <button 
-                className={styles.actionBtn}
-                onClick={() => setShowSharedLink(true)}
-                title="Share"
-              >
+              <button className={styles.actionBtn} onClick={() => setShowSharedLink(true)} title="Share">
                 <Link size={16} />
               </button>
-              <button 
-                className={styles.actionBtn}
-                onClick={() => setShowUsageStats(true)}
-                title="Usage Stats"
-              >
+              <button className={styles.actionBtn} onClick={() => setShowUsageStats(true)} title="Usage Stats">
                 <BarChart3 size={16} />
               </button>
             </>
           )}
-          <select 
-            className={styles.modelSelect}
-            value={selectedModel}
-            onChange={(e) => setSelectedModel(e.target.value)}
-          >
-            {MODELS.map(m => (
-              <option key={m.id} value={m.id}>{m.display}</option>
-            ))}
+          {/* Quick theme toggle */}
+          <button className={styles.actionBtn} onClick={toggleTheme} title={`Switch to ${resolvedTheme === 'dark' ? 'light' : 'dark'} mode`}>
+            {resolvedTheme === 'dark' ? <Sun size={16} /> : <Moon size={16} />}
+          </button>
+          <select className={styles.modelSelect} value={selectedModel} onChange={(e) => setSelectedModel(e.target.value)}>
+            {MODELS.map(m => (<option key={m.id} value={m.id}>{m.display}</option>))}
           </select>
           <button className={styles.settingsBtn} onClick={onOpenSettings} title="Settings">
             <Settings size={18} />
           </button>
         </div>
       </header>
+
+      {/* In-conversation Search Bar */}
+      <SearchBar
+        isOpen={showSearchBar}
+        onClose={() => setShowSearchBar(false)}
+        messages={messages}
+        onHighlight={handleSearchHighlight}
+      />
       
       <div className={styles.scrollArea} ref={scrollRef}>
         {messages.length === 0 ? (
           <div className={styles.welcomeScreen}>
             <div className={styles.welcomeIcon}><Bot size={48} /></div>
-            <h2 className={styles.welcomeTitle}>Welcome to AI-HAM</h2>
-            <p>Ask me anything — text or image. Switch models anytime.</p>
+            <h2 className={styles.welcomeTitle}>{getGreeting()}</h2>
+            <p className={styles.welcomeSubtitle}>Ask me anything — powered by <strong>{currentModelDisplay}</strong></p>
+            
+            {/* Suggested Starters */}
+            <div className={styles.starterGrid}>
+              {WELCOME_STARTERS.map((starter, idx) => (
+                <button
+                  key={idx}
+                  className={styles.starterCard}
+                  onClick={() => handleStarterClick(starter.prompt)}
+                >
+                  <span className={styles.starterIcon}>{starter.icon}</span>
+                  <span className={styles.starterLabel}>{starter.label}</span>
+                </button>
+              ))}
+            </div>
+
+            {/* Recent Conversations */}
+            {recentConversations.length > 0 && (
+              <div className={styles.recentSection}>
+                <div className={styles.recentTitle}>Recent Conversations</div>
+                <div className={styles.recentList}>
+                  {recentConversations.map(conv => (
+                    <button
+                      key={conv.id}
+                      className={styles.recentItem}
+                      onClick={() => setCurrentConversation(conv.id)}
+                    >
+                      <span className={styles.recentItemTitle}>{conv.title}</span>
+                      <span className={styles.recentItemCount}>{conv.messages.length} msgs</span>
+                    </button>
+                  ))}
+                </div>
+              </div>
+            )}
+
+            {/* What's New */}
+            <div className={styles.whatsNew}>
+              <span className={styles.whatsNewBadge}>✨ What's New</span>
+              <span>Slash commands, theme toggle, tags, and in-conversation search!</span>
+            </div>
+
             <div className={styles.welcomeActions}>
-              <button 
-                className={styles.templateBtn}
-                onClick={() => setShowTemplates(true)}
-              >
-                <FileText size={18} />
-                Browse Templates
+              <button className={styles.templateBtn} onClick={() => setShowTemplates(true)}>
+                <FileText size={18} /> Browse Templates
               </button>
             </div>
           </div>
@@ -363,6 +438,7 @@ const ChatArea: React.FC<ChatAreaProps> = ({ onOpenSettings }) => {
           <div className={styles.messagesContainer}>
             {messages.map((msg, idx) => {
               const isLastAI = !isStreaming && idx === lastAIIndex;
+              const highlight = searchHighlights.find(h => h.msgIndex === idx);
               
               return (
                 <MessageBubble 
@@ -372,6 +448,8 @@ const ChatArea: React.FC<ChatAreaProps> = ({ onOpenSettings }) => {
                   isLastAI={isLastAI}
                   onRegenerate={isLastAI ? handleRegenerate : undefined}
                   regenerationCount={isLastAI ? regenCount : undefined}
+                  searchQuery={showSearchBar ? undefined : undefined}
+                  highlightRanges={highlight?.matches}
                 />
               );
             })}
@@ -399,58 +477,36 @@ const ChatArea: React.FC<ChatAreaProps> = ({ onOpenSettings }) => {
         )}
       </div>
 
-      {/* Swipe peek indicator — visible bar on left edge during swipe */}
+      {/* Swipe peek indicator */}
       {swipeState.isSwiping && swipeState.offsetX > 5 && (
-        <div 
-          className={styles.swipePeekBar}
-          style={{ opacity: Math.min(swipeState.offsetX / 40, 1) }}
-        />
+        <div className={styles.swipePeekBar} style={{ opacity: Math.min(swipeState.offsetX / 40, 1) }} />
       )}
 
       {/* Floating Input Area */}
-      <ChatInput />
+      <ChatInput 
+        onShowTemplates={() => setShowTemplates(true)}
+        onShowToast={showToastMsg}
+      />
 
       {/* Toast */}
-      <Toast 
-        message={toastMsg} 
-        isVisible={showToast} 
-        onDismiss={() => setShowToast(false)} 
+      <Toast message={toastMsg} isVisible={showToast} onDismiss={() => setShowToast(false)} />
+
+      {/* Tag Selector */}
+      <TagSelector
+        isOpen={showTagSelector}
+        onClose={() => setShowTagSelector(false)}
+        currentTags={currentConversation?.tags || []}
+        onAddTag={(tag) => currentConversationId && addTag(currentConversationId, tag)}
+        onRemoveTag={(tag) => currentConversationId && removeTag(currentConversationId, tag)}
       />
 
       {/* Modals */}
-      <RenameModal
-        isOpen={showRenameModal}
-        currentName={currentConversation?.title || ''}
-        onClose={() => setShowRenameModal(false)}
-        onRename={handleRename}
-      />
-
-      <EditMessageModal
-        isOpen={!!editingMessage}
-        originalContent={editingMessage?.content || ''}
-        onClose={() => setEditingMessage(null)}
-        onSave={handleSaveEdit}
-      />
-
-      <TemplatesPanel
-        isOpen={showTemplates}
-        onClose={() => setShowTemplates(false)}
-      />
-      
-      <SharedLinkModal
-        isOpen={showSharedLink}
-        onClose={() => setShowSharedLink(false)}
-      />
-      
-      <BranchPanel
-        isOpen={showBranchPanel}
-        onClose={() => setShowBranchPanel(false)}
-      />
-      
-      <UsageStatsPanel
-        isOpen={showUsageStats}
-        onClose={() => setShowUsageStats(false)}
-      />
+      <RenameModal isOpen={showRenameModal} currentName={currentConversation?.title || ''} onClose={() => setShowRenameModal(false)} onRename={handleRename} />
+      <EditMessageModal isOpen={!!editingMessage} originalContent={editingMessage?.content || ''} onClose={() => setEditingMessage(null)} onSave={handleSaveEdit} />
+      <TemplatesPanel isOpen={showTemplates} onClose={() => setShowTemplates(false)} />
+      <SharedLinkModal isOpen={showSharedLink} onClose={() => setShowSharedLink(false)} />
+      <BranchPanel isOpen={showBranchPanel} onClose={() => setShowBranchPanel(false)} />
+      <UsageStatsPanel isOpen={showUsageStats} onClose={() => setShowUsageStats(false)} />
     </main>
   );
 };

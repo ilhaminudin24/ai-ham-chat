@@ -1,11 +1,13 @@
 /* AI-HAM Chat - Design Tokens (Claude AI Style) */
 
-:root {
+:root,
+[data-theme="dark"] {
   /* Colors - Dark Mode (Claude inspired) */
   --bg-app: #0f0f11;
   --bg-sidebar: #18181b;
   --bg-sidebar-hover: #27272a;
   --bg-chat: #0f0f11;
+  --bg-modal: #1c1c1f;
   
   --bg-input: #18181b;
   --bg-input-hover: #212124;
@@ -14,8 +16,8 @@
   --border-sidebar: rgba(255, 255, 255, 0.08);
 
   /* Message Bubbles */
-  --msg-user-bg: #212124; /* Soft dark gray for user */
-  --msg-ai-bg: transparent; /* AI doesn't have a distinct background bubble, just text */
+  --msg-user-bg: #212124;
+  --msg-ai-bg: transparent;
   --msg-ai-border: rgba(255, 255, 255, 0.1);
 
   /* Typography Colors */
@@ -24,13 +26,28 @@
   --text-muted: #71717A;
   
   /* Accent Colors */
+  --accent: #8b5cf6;
   --accent-primary: #D1D1D1;
   --accent-hover: #FFFFFF;
-  --accent-brand: #C2955B; /* A subtle warm earthy accent if needed */
+  --accent-brand: #C2955B;
 
   /* Shadows */
   --shadow-input: 0 4px 20px rgba(0, 0, 0, 0.5);
   --shadow-dropdown: 0 10px 40px rgba(0, 0, 0, 0.6);
+  --shadow-lg: 0 8px 32px rgba(0, 0, 0, 0.4);
+
+  /* Search highlight */
+  --highlight-bg: rgba(250, 204, 21, 0.35);
+  --highlight-active-bg: rgba(250, 204, 21, 0.7);
+
+  /* Tag colors */
+  --tag-red: #ef4444;
+  --tag-green: #22c55e;
+  --tag-blue: #3b82f6;
+  --tag-yellow: #eab308;
+  --tag-purple: #a855f7;
+  --tag-orange: #f97316;
+  --tag-cyan: #06b6d4;
 
   /* Borders & Radius */
   --radius-sm: 6px;
@@ -49,6 +66,50 @@
   /* Utilities */
   --transition-fast: 0.15s ease-in-out;
   --transition-normal: 0.3s cubic-bezier(0.2, 0.8, 0.2, 1);
+
+  color-scheme: dark;
+}
+
+/* Light Theme */
+[data-theme="light"] {
+  --bg-app: #ffffff;
+  --bg-sidebar: #f4f4f5;
+  --bg-sidebar-hover: #e4e4e7;
+  --bg-chat: #ffffff;
+  --bg-modal: #ffffff;
+  
+  --bg-input: #f4f4f5;
+  --bg-input-hover: #e4e4e7;
+  
+  --border-light: rgba(0, 0, 0, 0.1);
+  --border-sidebar: rgba(0, 0, 0, 0.08);
+
+  --msg-user-bg: #f0f0f2;
+  --msg-ai-bg: transparent;
+  --msg-ai-border: rgba(0, 0, 0, 0.1);
+
+  --text-primary: #18181b;
+  --text-secondary: #52525b;
+  --text-muted: #a1a1aa;
+  
+  --accent: #7c3aed;
+  --accent-primary: #27272a;
+  --accent-hover: #09090b;
+  --accent-brand: #a67c52;
+
+  --shadow-input: 0 4px 20px rgba(0, 0, 0, 0.08);
+  --shadow-dropdown: 0 10px 40px rgba(0, 0, 0, 0.12);
+  --shadow-lg: 0 8px 32px rgba(0, 0, 0, 0.1);
+
+  --highlight-bg: rgba(250, 204, 21, 0.3);
+  --highlight-active-bg: rgba(250, 204, 21, 0.6);
+
+  color-scheme: light;
+}
+
+/* Smooth transition on theme switch */
+html[data-theme-transitioning] * {
+  transition: background-color 0.3s ease, color 0.3s ease, border-color 0.3s ease, box-shadow 0.3s ease !important;
 }
 
 * {

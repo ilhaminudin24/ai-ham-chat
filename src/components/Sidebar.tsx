@@ -2,6 +2,7 @@ import React, { useState, useMemo, useEffect, useRef } from 'react';
 import { MessageSquarePlus, MessageSquare, Trash2, Bot, Search, ChevronRight, MoreHorizontal, FolderPlus, X, FolderInput, Pin, Settings } from 'lucide-react';
 import { useChatStore } from '../store/chatStore';
 import { SkillsPanel } from './SkillsPanel';
+import { TagChip } from './TagSelector';
 import styles from './Sidebar.module.css';
 
 const Sidebar: React.FC = () => {
@@ -24,6 +25,7 @@ const Sidebar: React.FC = () => {
   } = useChatStore();
   
   const [showSkills, setShowSkills] = useState(false);
+  const [filterTag, setFilterTag] = useState<string | null>(null);
 
   const [expandedFolders, setExpandedFolders] = useState<string[]>(['today', 'work', 'personal']);
   const [showFolderMenu, setShowFolderMenu] = useState<string | null>(null);
@@ -43,15 +45,21 @@ const Sidebar: React.FC = () => {
     return () => document.removeEventListener('mousedown', handleClickOutside);
   }, []);
 
-  // Filter conversations by search
+  // Filter conversations by search and tag
   const filteredConversations = useMemo(() => {
-    if (!searchQuery.trim()) return conversations;
-    const query = searchQuery.toLowerCase();
-    return conversations.filter(conv => 
-      conv.title.toLowerCase().includes(query) ||
-      conv.messages.some(msg => msg.content.toLowerCase().includes(query))
-    );
-  }, [conversations, searchQuery]);
+    let result = conversations;
+    if (searchQuery.trim()) {
+      const query = searchQuery.toLowerCase();
+      result = result.filter(conv => 
+        conv.title.toLowerCase().includes(query) ||
+        conv.messages.some(msg => msg.content.toLowerCase().includes(query))
+      );
+    }
+    if (filterTag) {
+      result = result.filter(conv => (conv.tags || []).includes(filterTag));
+    }
+    return result;
+  }, [conversations, searchQuery, filterTag]);
 
   // Group conversations by folder
   const groupedConversations = useMemo(() => {
@@ -126,6 +134,21 @@ const Sidebar: React.FC = () => {
             </button>
           )}
         </div>
+
+        {/* Tag filter bar */}
+        {filterTag && (
+          <div style={{ padding: '0 16px 8px', display: 'flex', gap: '6px', alignItems: 'center' }}>
+            <span style={{ fontSize: '0.7rem', color: 'var(--text-muted)' }}>Filter:</span>
+            <TagChip tag={filterTag} />
+            <button
+              onClick={() => setFilterTag(null)}
+              style={{ background: 'transparent', border: 'none', color: 'var(--text-muted)', cursor: 'pointer', padding: '2px', display: 'flex' }}
+              title="Clear filter"
+            >
+              <X size={12} />
+            </button>
+          </div>
+        )}
 
         {/* Search Results or Folder View */}
         <div className={styles.chatList}>
@@ -313,7 +336,18 @@ const Sidebar: React.FC = () => {
                       >
                         {conv.isPinned && <Pin size={12} className={styles.pinIcon} />}
                         <MessageSquare size={14} />
-                        <span className={styles.chatTitle}>{conv.title || 'New Chat'}</span>
+                        <div style={{ flex: 1, minWidth: 0 }}>
+                          <span className={styles.chatTitle}>{conv.title || 'New Chat'}</span>
+                          {conv.tags && conv.tags.length > 0 && (
+                            <div style={{ display: 'flex', gap: '3px', marginTop: '2px', flexWrap: 'wrap' }}>
+                              {conv.tags.map(tag => (
+                                <span key={tag} onClick={(e) => { e.stopPropagation(); setFilterTag(tag); }}>
+                                  <TagChip tag={tag} small />
+                                </span>
+                              ))}
+                            </div>
+                          )}
+                        </div>
                         <div className={styles.itemActions}>
                           <button 
                             className={`${styles.pinBtn} ${conv.isPinned ? styles.pinned : ''}`}

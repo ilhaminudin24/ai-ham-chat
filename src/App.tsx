@@ -5,6 +5,7 @@ import Settings from './components/Settings';
 import { QuickSwitcher } from './components/QuickSwitcher';
 import { ShortcutsHelp } from './components/ShortcutsHelp';
 import { useChatStore } from './store/chatStore';
+import { useTheme } from './hooks/useTheme';
 
 function App() {
   const [showSettings, setShowSettings] = useState(false);
@@ -12,6 +13,9 @@ function App() {
   const [showShortcuts, setShowShortcuts] = useState(false);
   
   const { createNewConversation, conversations, currentConversationId, setCurrentConversation } = useChatStore();
+
+  // Initialize theme
+  useTheme();
 
   // Global keyboard shortcuts
   useEffect(() => {

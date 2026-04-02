@@ -24,12 +24,17 @@ export const sendChatRequest = async (
     // Initial placeholder for AI message
     store.addMessage(conversationId, { role: 'assistant', content: '' });
 
-    // Build system prompt with skills
+    // Build system prompt with skills + conversation-specific prompt
     const activeSkills = store.activeSkills;
     const skillsPrompt = generateSkillsSystemPrompt(activeSkills);
-    const fullSystemPrompt = skillsPrompt 
-      ? `${BASE_SYSTEM_PROMPT}\n\n${skillsPrompt}`
-      : BASE_SYSTEM_PROMPT;
+    
+    // Check for conversation-specific system prompt
+    const currentConv = store.conversations.find(c => c.id === conversationId);
+    const convSystemPrompt = currentConv?.systemPrompt;
+    
+    let fullSystemPrompt = BASE_SYSTEM_PROMPT;
+    if (convSystemPrompt) fullSystemPrompt += `\n\n${convSystemPrompt}`;
+    if (skillsPrompt) fullSystemPrompt += `\n\n${skillsPrompt}`;
 
     // Map to API format - add system prompt at the beginning
     const apiMessages = [

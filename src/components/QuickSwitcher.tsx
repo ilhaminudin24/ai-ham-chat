@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { Search, MessageSquare } from 'lucide-react';
 import { useChatStore } from '../store/chatStore';
+import { TagChip } from './TagSelector';
 import styles from './QuickSwitcher.module.css';
 
 interface QuickSwitcherProps {
@@ -130,6 +131,11 @@ export const QuickSwitcher: React.FC<QuickSwitcherProps> = ({ isOpen, onClose })
                   </div>
                   <div className={styles.resultMeta}>
                     {getFolderName(conv.folderId)} • {conv.messages.length} messages
+                    {conv.tags && conv.tags.length > 0 && (
+                      <span style={{ marginLeft: '6px', display: 'inline-flex', gap: '3px' }}>
+                        {conv.tags.map(tag => <TagChip key={tag} tag={tag} small />)}
+                      </span>
+                    )}
                   </div>
                 </div>
               </div>

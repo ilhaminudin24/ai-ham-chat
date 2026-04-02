@@ -145,7 +145,7 @@
   flex-direction: column;
 }
 
-/* Empty State / Welcome Screen */
+/* Rich Welcome Screen */
 .welcomeScreen {
   display: flex;
   flex-direction: column;
@@ -155,25 +155,172 @@
   color: var(--text-secondary);
   text-align: center;
   padding: 0 20px;
+  animation: welcomeFadeIn 0.6s ease;
+}
+
+@keyframes welcomeFadeIn {
+  from { opacity: 0; transform: translateY(20px); }
+  to { opacity: 1; transform: translateY(0); }
 }
 
 .welcomeIcon {
-  margin-bottom: 24px;
+  margin-bottom: 20px;
   color: var(--text-primary);
   opacity: 0.8;
+  animation: welcomeFadeIn 0.6s ease 0.1s both;
 }
 
 .welcomeTitle {
   font-size: 1.5rem;
   font-weight: 600;
   color: var(--text-primary);
+  margin-bottom: 6px;
+  animation: welcomeFadeIn 0.6s ease 0.15s both;
+}
+
+.welcomeSubtitle {
+  font-size: 0.9rem;
+  color: var(--text-muted);
+  margin-bottom: 20px;
+  animation: welcomeFadeIn 0.6s ease 0.2s both;
+}
+
+.welcomeSubtitle strong {
+  color: var(--accent-brand);
+}
+
+/* Starter Cards */
+.starterGrid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 10px;
+  max-width: 480px;
+  width: 100%;
+  margin-bottom: 24px;
+  animation: welcomeFadeIn 0.6s ease 0.25s both;
+}
+
+@media (max-width: 600px) {
+  .starterGrid { grid-template-columns: repeat(2, 1fr); }
+}
+
+.starterCard {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 6px;
+  padding: 16px 12px;
+  background: var(--bg-input);
+  border: 1px solid var(--border-light);
+  border-radius: 12px;
+  cursor: pointer;
+  transition: all var(--transition-fast);
+  color: var(--text-secondary);
+}
+
+.starterCard:hover {
+  background: var(--bg-input-hover);
+  border-color: var(--accent-brand);
+  color: var(--text-primary);
+  transform: translateY(-2px);
+  box-shadow: 0 4px 16px rgba(0,0,0,0.15);
+}
+
+.starterIcon {
+  font-size: 1.5rem;
+}
+
+.starterLabel {
+  font-size: 0.8rem;
+  font-weight: 500;
+}
+
+/* Recent Conversations */
+.recentSection {
+  max-width: 480px;
+  width: 100%;
+  text-align: left;
+  margin-bottom: 20px;
+  animation: welcomeFadeIn 0.6s ease 0.3s both;
+}
+
+.recentTitle {
+  font-size: 0.7rem;
+  font-weight: 600;
+  color: var(--text-muted);
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
   margin-bottom: 8px;
+  padding-left: 4px;
+}
+
+.recentList {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.recentItem {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 10px 14px;
+  background: transparent;
+  border: 1px solid var(--border-light);
+  border-radius: 10px;
+  cursor: pointer;
+  transition: all var(--transition-fast);
+  text-align: left;
+  color: var(--text-secondary);
+}
+
+.recentItem:hover {
+  background: var(--bg-input);
+  color: var(--text-primary);
+  border-color: var(--accent-brand);
+}
+
+.recentItemTitle {
+  font-size: 0.85rem;
+  font-weight: 500;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  max-width: 300px;
+}
+
+.recentItemCount {
+  font-size: 0.7rem;
+  color: var(--text-muted);
+  flex-shrink: 0;
+}
+
+/* What's New */
+.whatsNew {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 16px;
+  background: linear-gradient(135deg, rgba(139, 92, 246, 0.08), rgba(59, 130, 246, 0.08));
+  border: 1px solid rgba(139, 92, 246, 0.15);
+  border-radius: 20px;
+  font-size: 0.78rem;
+  color: var(--text-secondary);
+  margin-bottom: 16px;
+  animation: welcomeFadeIn 0.6s ease 0.35s both;
+}
+
+.whatsNewBadge {
+  font-weight: 600;
+  color: #8b5cf6;
+  white-space: nowrap;
 }
 
 .welcomeActions {
   display: flex;
   gap: 12px;
-  margin-top: 20px;
+  margin-top: 8px;
+  animation: welcomeFadeIn 0.6s ease 0.4s both;
 }
 
 .templateBtn {

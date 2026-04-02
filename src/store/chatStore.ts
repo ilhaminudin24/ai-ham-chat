@@ -26,6 +26,8 @@ export interface Conversation {
   createdAt: string;
   folderId: string | null;
   isPinned: boolean;
+  tags: string[];
+  systemPrompt?: string;
 }
 
 export interface Folder {
@@ -38,6 +40,7 @@ export interface Folder {
 export interface Settings {
   soundEnabled: boolean;
   defaultModel: string;
+  theme: 'dark' | 'light' | 'system';
 }
 
 export interface UsageStats {
@@ -117,6 +120,19 @@ export interface ChatState {
   setStreamingPhase: (phase: ChatState['streamingPhase']) => void;
   setAbortController: (controller: AbortController | null) => void;
   regenerateLastResponse: (convId: string) => void;
+  
+  // Theme
+  setTheme: (theme: Settings['theme']) => void;
+  
+  // Tags
+  addTag: (convId: string, tag: string) => void;
+  removeTag: (convId: string, tag: string) => void;
+  
+  // System prompt per conversation
+  setConversationSystemPrompt: (convId: string, prompt: string) => void;
+  
+  // Clear messages in conversation
+  clearConversationMessages: (convId: string) => void;
 }
 
 const defaultFolders: Folder[] = [
@@ -128,7 +144,8 @@ const defaultFolders: Folder[] = [
 
 const defaultSettings: Settings = {
   soundEnabled: true,
-  defaultModel: 'minimax/MiniMax-M2.7'
+  defaultModel: 'minimax/MiniMax-M2.7',
+  theme: 'dark'
 };
 
 const defaultUsageStats: UsageStats = {
@@ -166,7 +183,8 @@ export const useChatStore = create<ChatState>()(
           activeBranchId: null,
           createdAt: new Date().toISOString(),
           folderId: null,
-          isPinned: false
+          isPinned: false,
+          tags: []
         };
         set({
           conversations: [newConv, ...get().conversations],
@@ -482,6 +500,51 @@ export const useChatStore = create<ChatState>()(
             return { ...conv, messages: msgs };
           })
         });
+      },
+      
+      // Theme
+      setTheme: (theme) => {
+        set({ settings: { ...get().settings, theme } });
+      },
+      
+      // Tags
+      addTag: (convId, tag) => {
+        set({
+          conversations: get().conversations.map(conv => {
+            if (conv.id !== convId) return conv;
+            if (conv.tags?.includes(tag)) return conv;
+            return { ...conv, tags: [...(conv.tags || []), tag] };
+          })
+        });
+      },
+      
+      removeTag: (convId, tag) => {
+        set({
+          conversations: get().conversations.map(conv => {
+            if (conv.id !== convId) return conv;
+            return { ...conv, tags: (conv.tags || []).filter(t => t !== tag) };
+          })
+        });
+      },
+      
+      // System prompt per conversation
+      setConversationSystemPrompt: (convId, prompt) => {
+        set({
+          conversations: get().conversations.map(conv => {
+            if (conv.id !== convId) return conv;
+            return { ...conv, systemPrompt: prompt };
+          })
+        });
+      },
+      
+      // Clear messages in a conversation
+      clearConversationMessages: (convId) => {
+        set({
+          conversations: get().conversations.map(conv => {
+            if (conv.id !== convId) return conv;
+            return { ...conv, messages: [] };
+          })
+        });
       }
     }),
     {
@@ -491,8 +554,10 @@ export const useChatStore = create<ChatState>()(
         selectedModel: state.selectedModel,
         folders: state.folders,
         settings: state.settings,
-        activeSkills: state.activeSkills
+        activeSkills: state.activeSkills,
+        usageStats: state.usageStats
       }),
     }
   )
 );
+

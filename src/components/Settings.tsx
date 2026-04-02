@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { X, Volume2, VolumeX, Bot, Trash2, Check } from 'lucide-react';
+import { X, Volume2, VolumeX, Bot, Trash2, Check, Sun, Moon, Monitor } from 'lucide-react';
 import { useChatStore } from '../store/chatStore';
 import styles from './Settings.module.css';
 
@@ -15,8 +15,14 @@ const MODELS = [
   { id: 'google-gemini-cli/gemini-3.1-pro-preview', name: 'Gemini 3.1 Pro' },
 ];
 
+const THEME_OPTIONS: { value: 'dark' | 'light' | 'system'; label: string; icon: React.ReactNode }[] = [
+  { value: 'dark', label: 'Dark', icon: <Moon size={18} /> },
+  { value: 'light', label: 'Light', icon: <Sun size={18} /> },
+  { value: 'system', label: 'System', icon: <Monitor size={18} /> },
+];
+
 const Settings: React.FC<SettingsProps> = ({ onClose }) => {
-  const { settings, setSoundEnabled, setDefaultModel, clearAllConversations } = useChatStore();
+  const { settings, setSoundEnabled, setDefaultModel, clearAllConversations, setTheme } = useChatStore();
   const [showClearConfirm, setShowClearConfirm] = useState(false);
 
   const handleClearHistory = () => {
@@ -36,6 +42,23 @@ const Settings: React.FC<SettingsProps> = ({ onClose }) => {
         </div>
 
         <div className={styles.content}>
+          {/* Theme Setting */}
+          <div className={styles.section}>
+            <div className={styles.sectionTitle}>Appearance</div>
+            <div className={styles.themeSelector}>
+              {THEME_OPTIONS.map(opt => (
+                <button
+                  key={opt.value}
+                  className={`${styles.themeBtn} ${settings.theme === opt.value ? styles.active : ''}`}
+                  onClick={() => setTheme(opt.value)}
+                >
+                  {opt.icon}
+                  <span>{opt.label}</span>
+                </button>
+              ))}
+            </div>
+          </div>
+
           {/* Sound Setting */}
           <div className={styles.section}>
             <div className={styles.sectionTitle}>Sound</div>
@@ -119,7 +142,7 @@ const Settings: React.FC<SettingsProps> = ({ onClose }) => {
               <div className={styles.aboutIcon}>👾</div>
               <div>
                 <div className={styles.aboutName}>AI-HAM Chat</div>
-                <div className={styles.aboutVersion}>Version 1.0.0</div>
+                <div className={styles.aboutVersion}>Version 2.0.0</div>
               </div>
             </div>
           </div>

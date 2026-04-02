@@ -22,6 +22,8 @@ interface Props {
   isLastAI?: boolean;
   onRegenerate?: (modelId?: string) => void;
   regenerationCount?: number;
+  searchQuery?: string;
+  highlightRanges?: number[];
 }
 
 // Parse markdown table to TSV format for Outlook
