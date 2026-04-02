@@ -419,11 +419,13 @@ export const useChatStore = create<ChatState>()(
         set({
           conversations: get().conversations.map(c => {
             if (c.id !== convId) return c;
+            // Migrate: ensure mainThreadMessages is set for old conversations
+            const mainMsgs = c.mainThreadMessages ?? c.messages;
             return {
               ...c,
               branches: [...c.branches, newBranch],
-              messages: branchMessages, // Switch to branch view
-              mainThreadMessages: c.mainThreadMessages?.length ? c.mainThreadMessages : c.messages // Preserve main thread
+              mainThreadMessages: mainMsgs,
+              messages: branchMessages // Switch to branch view
             };
           })
         });
@@ -438,10 +440,13 @@ export const useChatStore = create<ChatState>()(
           set({
             conversations: get().conversations.map(c => {
               if (c.id !== convId) return c;
+              // Migrate: ensure mainThreadMessages is set for old conversations
+              const mainMsgs = c.mainThreadMessages ?? c.messages;
               return {
                 ...c,
+                mainThreadMessages: mainMsgs,
                 activeBranchId: null,
-                messages: c.mainThreadMessages?.length ? c.mainThreadMessages : c.messages
+                messages: mainMsgs
               };
             })
           });
@@ -454,8 +459,11 @@ export const useChatStore = create<ChatState>()(
         set({
           conversations: get().conversations.map(c => {
             if (c.id !== convId) return c;
+            // Migrate: ensure mainThreadMessages is set for old conversations
+            const mainMsgs = c.mainThreadMessages ?? c.messages;
             return {
               ...c,
+              mainThreadMessages: mainMsgs,
               activeBranchId: branchId,
               messages: branch.messages
             };
@@ -583,7 +591,11 @@ export const useChatStore = create<ChatState>()(
     {
       name: 'aiham_conversations_v4',
       partialize: (state) => ({ 
-        conversations: state.conversations, 
+        conversations: state.conversations.map(conv => ({
+          ...conv,
+          // Ensure mainThreadMessages is always set (migration for old conversations)
+          mainThreadMessages: conv.mainThreadMessages ?? conv.messages
+        })), 
         selectedModel: state.selectedModel,
         folders: state.folders,
         settings: state.settings,
