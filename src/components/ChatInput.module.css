@@ -6,6 +6,7 @@
   padding: 16px 20px 24px;
   background: linear-gradient(to top, var(--bg-app) 80%, transparent);
   z-index: 10;
+  transition: border-color var(--transition-fast);
 }
 
 .inputWrapper {
@@ -105,50 +106,168 @@
   transform: none;
 }
 
-/* Image Preview Styles */
-.imagePreviewWrapper {
-  max-width: var(--content-max-width);
-  margin: 0 auto;
-  padding: 0 16px 8px;
+/* ===== Multi-File Preview Gallery ===== */
+.filePreviewGallery {
   display: flex;
+  gap: 8px;
+  padding: 8px 12px 6px;
+  overflow-x: auto;
+  scrollbar-width: thin;
+  animation: gallerySlideUp 0.2s ease;
 }
 
-.imagePreview {
+@keyframes gallerySlideUp {
+  from { opacity: 0; transform: translateY(8px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+.filePreviewItem {
   position: relative;
-  display: inline-block;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 4px;
+  min-width: 80px;
+  max-width: 100px;
+  padding: 6px;
+  background: var(--bg-input);
   border: 1px solid var(--border-light);
-  border-radius: var(--radius-md);
-  padding: 4px;
-  background-color: var(--bg-input);
+  border-radius: 10px;
+  flex-shrink: 0;
+  transition: border-color var(--transition-fast);
 }
 
-.imagePreview img {
-  max-width: 150px;
-  max-height: 120px;
-  border-radius: 4px;
+.filePreviewItem:hover {
+  border-color: var(--accent-primary);
+}
+
+.filePreviewImg {
+  width: 72px;
+  height: 56px;
   object-fit: cover;
+  border-radius: 6px;
 }
 
-.removeImgBtn {
+.filePreviewDoc {
+  width: 72px;
+  height: 56px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 2px;
+  background: var(--bg-sidebar);
+  border-radius: 6px;
+  color: var(--accent-primary);
+}
+
+.filePreviewExt {
+  font-size: 0.55rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  color: var(--text-muted);
+  letter-spacing: 0.02em;
+}
+
+.filePreviewMeta {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 1px;
+  width: 100%;
+}
+
+.filePreviewName {
+  font-size: 0.65rem;
+  color: var(--text-secondary);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  max-width: 80px;
+  text-align: center;
+}
+
+.filePreviewSize {
+  font-size: 0.55rem;
+  color: var(--text-muted);
+}
+
+.fileRemoveBtn {
   position: absolute;
-  top: -8px;
-  right: -8px;
-  width: 24px;
-  height: 24px;
+  top: -6px;
+  right: -6px;
+  width: 20px;
+  height: 20px;
   border-radius: 50%;
-  background-color: #ef4444;
+  background: #ef4444;
   color: white;
-  border: none;
+  border: 2px solid var(--bg-app);
   display: flex;
   align-items: center;
   justify-content: center;
   cursor: pointer;
-  box-shadow: 0 2px 4px rgba(0,0,0,0.2);
-  transition: transform 0.1s;
+  opacity: 0;
+  transition: opacity 0.15s ease, transform 0.1s ease;
 }
 
-.removeImgBtn:hover {
-  transform: scale(1.1);
+.filePreviewItem:hover .fileRemoveBtn {
+  opacity: 1;
+}
+
+.fileRemoveBtn:hover {
+  transform: scale(1.15);
+}
+
+.addMoreBtn {
+  width: 72px;
+  min-width: 72px;
+  height: 80px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: transparent;
+  border: 2px dashed var(--border-light);
+  border-radius: 10px;
+  color: var(--text-muted);
+  font-size: 1.5rem;
+  cursor: pointer;
+  transition: all var(--transition-fast);
+  flex-shrink: 0;
+}
+
+.addMoreBtn:hover {
+  border-color: var(--accent-primary);
+  color: var(--accent-primary);
+  background: rgba(255, 255, 255, 0.02);
+}
+
+/* ===== Drag & Drop Overlay ===== */
+.dragActive {
+  position: relative;
+}
+
+.dragOverlay {
+  position: absolute;
+  inset: 0;
+  z-index: 20;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  background: rgba(139, 92, 246, 0.12);
+  border: 2px dashed #8b5cf6;
+  border-radius: 16px;
+  color: #8b5cf6;
+  font-size: 0.95rem;
+  font-weight: 600;
+  animation: dragPulse 1.5s ease infinite;
+  pointer-events: none;
+}
+
+@keyframes dragPulse {
+  0%, 100% { opacity: 0.9; }
+  50% { opacity: 1; }
 }
 
 /* Mobile responsive adjustments */
@@ -164,6 +283,25 @@
   
   .textarea {
     font-size: 16px; /* Prevent zoom on iOS */
+  }
+
+  .filePreviewGallery {
+    padding: 6px 8px;
+  }
+
+  .filePreviewItem {
+    min-width: 68px;
+    max-width: 80px;
+  }
+
+  .filePreviewImg {
+    width: 60px;
+    height: 48px;
+  }
+
+  .filePreviewDoc {
+    width: 60px;
+    height: 48px;
   }
 }
 

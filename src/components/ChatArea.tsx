@@ -145,7 +145,9 @@ const ChatArea: React.FC<ChatAreaProps> = ({ onOpenSettings }) => {
   // Detect if last user message has an image
   const lastUserHasImage = useMemo(() => {
     for (let i = messages.length - 1; i >= 0; i--) {
-      if (messages[i].role === 'user') return !!messages[i].image;
+      if (messages[i].role === 'user') {
+        return !!messages[i].image || !!(messages[i].files?.some(f => f.isImage));
+      }
     }
     return false;
   }, [messages]);

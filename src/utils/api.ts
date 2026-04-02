@@ -40,12 +40,19 @@ export const sendChatRequest = async (
     const apiMessages = [
       { role: 'system', content: fullSystemPrompt },
       ...messages.map((m) => {
-        if (m.image) {
+        // Collect all images from both legacy and new format
+        const images: string[] = [];
+        if (m.image) images.push(m.image);
+        if (m.files) {
+          m.files.filter(f => f.isImage).forEach(f => images.push(f.dataUrl));
+        }
+        
+        if (images.length > 0) {
           return {
             role: m.role,
             content: [
               { type: 'text', text: m.content || '[Image]' },
-              { type: 'image_url', image_url: { url: m.image } }
+              ...images.map(url => ({ type: 'image_url', image_url: { url } }))
             ]
           };
         }

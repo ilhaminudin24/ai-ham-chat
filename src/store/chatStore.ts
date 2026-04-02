@@ -2,10 +2,20 @@ import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
 import type { Skill } from '../types/skills';
 
+export interface FileAttachment {
+  id: string;
+  name: string;
+  type: string; // MIME type
+  size: number; // bytes
+  dataUrl: string; // base64 data URL
+  isImage: boolean;
+}
+
 export interface Message {
   role: 'user' | 'assistant' | 'ai';
   content: string;
-  image?: string | null;
+  image?: string | null; // legacy single image (backward compat)
+  files?: FileAttachment[]; // new multi-file support
   timestamp?: string;
 }
 

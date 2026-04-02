@@ -178,11 +178,39 @@ export const MessageBubble: React.FC<Props> = ({ message, onEdit, isLastAI, onRe
                {message.content}
              </ReactMarkdown>
           ) : (
-             <div style={{ whiteSpace: 'pre-wrap' }}>{message.content === '[Image]' ? '' : message.content}</div>
+            <>
+              {message.content !== '[Image]' && !message.content.match(/^\[\d+ file\(s\)\]$/) && (
+                <div style={{ whiteSpace: 'pre-wrap' }}>
+                  {message.content.replace(/^\[\d+ file\(s\)\]\s*/, '')}
+                </div>
+              )}
+            </>
           )}
           
-          {message.image && (
+          {/* Legacy single image */}
+          {message.image && !message.files && (
              <img src={message.image} alt="Uploaded attachment" className={styles.userImage} />
+          )}
+          
+          {/* Multi-file gallery */}
+          {message.files && message.files.length > 0 && (
+            <div className={styles.fileGallery}>
+              {message.files.map(file => (
+                <div key={file.id} className={file.isImage ? styles.galleryImageWrap : styles.galleryFileWrap}>
+                  {file.isImage ? (
+                    <img src={file.dataUrl} alt={file.name} className={styles.galleryImage} />
+                  ) : (
+                    <div className={styles.galleryFile}>
+                      <span className={styles.galleryFileIcon}>📄</span>
+                      <span className={styles.galleryFileName}>{file.name}</span>
+                      <span className={styles.galleryFileSize}>
+                        {file.size < 1024 ? `${file.size} B` : file.size < 1024*1024 ? `${(file.size/1024).toFixed(1)} KB` : `${(file.size/(1024*1024)).toFixed(1)} MB`}
+                      </span>
+                    </div>
+                  )}
+                </div>
+              ))}
+            </div>
           )}
         </div>
 
