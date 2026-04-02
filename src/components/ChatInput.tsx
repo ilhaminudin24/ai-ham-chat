@@ -5,7 +5,6 @@ import { sendChatRequest } from '../utils/api';
 import styles from './ChatInput.module.css';
 
 const ChatInput: React.FC = () => {
-  const [text, setText] = useState('');
   const [image, setImage] = useState<string | null>(null);
   
   const textareaRef = useRef<HTMLTextAreaElement>(null);
@@ -14,8 +13,13 @@ const ChatInput: React.FC = () => {
   const { 
     currentConversationId, 
     isStreaming,
-    selectedModel
+    selectedModel,
+    inputText,
+    setInputText
   } = useChatStore();
+
+  // Use inputText from store as the text state
+  const text = inputText;
 
   const handleInput = () => {
     if (textareaRef.current) {
@@ -28,6 +32,11 @@ const ChatInput: React.FC = () => {
     handleInput(); // Re-calculate height on text change
   }, [text]);
 
+  // Sync text changes to store
+  const handleTextChange = (newText: string) => {
+    setInputText(newText);
+  };
+
   const handleSend = async () => {
     if ((!text.trim() && !image) || isStreaming) return;
 
@@ -36,7 +45,6 @@ const ChatInput: React.FC = () => {
     // Create new conversation on the fly if none selected
     if (!convId) {
       useChatStore.getState().createNewConversation();
-      // Zustands state update is synchronous for local object, but let's grab the freshly generated ID
       convId = useChatStore.getState().currentConversationId;
     }
     
@@ -51,14 +59,13 @@ const ChatInput: React.FC = () => {
     useChatStore.getState().addMessage(convId, userMessage);
     
     // Clear input
-    setText('');
+    setInputText('');
     setImage(null);
     if (textareaRef.current) textareaRef.current.style.height = 'auto';
 
     // Fetch conversation after adding user message to send full context API
     const currentConv = useChatStore.getState().conversations.find(c => c.id === convId);
     if (currentConv) {
-      // Trigger API Call (Background)
       await sendChatRequest(convId, currentConv.messages, selectedModel);
     }
   };
@@ -79,7 +86,6 @@ const ChatInput: React.FC = () => {
       };
       reader.readAsDataURL(file);
     }
-    // reset input
     if (fileInputRef.current) fileInputRef.current.value = '';
   };
 
@@ -123,7 +129,7 @@ const ChatInput: React.FC = () => {
             className={styles.textarea}
             placeholder={isStreaming ? "AI-HAM is typing..." : "Message AI-HAM..."}
             value={text}
-            onChange={(e) => setText(e.target.value)}
+            onChange={(e) => handleTextChange(e.target.value)}
             onKeyDown={handleKeyDown}
             disabled={isStreaming}
             rows={1}

@@ -39,6 +39,7 @@ export interface ChatState {
   searchQuery: string;
   settings: Settings;
   activeSkills: Skill[];
+  inputText: string; // For template/quick input
   
   // Actions
   createNewConversation: () => void;
@@ -51,6 +52,7 @@ export interface ChatState {
   setSelectedModel: (model: string) => void;
   deleteConversation: (id: string) => void;
   setSearchQuery: (query: string) => void;
+  setInputText: (text: string) => void;
   
   // Pin actions
   pinConversation: (id: string) => void;
@@ -100,6 +102,7 @@ export const useChatStore = create<ChatState>()(
       isStreaming: false,
       isSidebarOpen: false,
       selectedModel: 'minimax/MiniMax-M2.7',
+      inputText: '',
       folders: defaultFolders,
       searchQuery: '',
       settings: defaultSettings,
@@ -307,6 +310,10 @@ export const useChatStore = create<ChatState>()(
             return { ...conv, messages: updatedMessages };
           })
         });
+      },
+      
+      setInputText: (text) => {
+        set({ inputText: text });
       }
     }),
     {

@@ -13,7 +13,7 @@ export const TemplatesPanel: React.FC<TemplatesPanelProps> = ({ isOpen, onClose 
   const [query, setQuery] = useState('');
   const [expandedCategory, setExpandedCategory] = useState<string | null>('Business');
   
-  const { createNewConversation, addMessage } = useChatStore();
+  const { setInputText, createNewConversation } = useChatStore();
 
   // Filter templates based on query
   const filteredTemplates = useMemo(() => {
@@ -37,25 +37,23 @@ export const TemplatesPanel: React.FC<TemplatesPanelProps> = ({ isOpen, onClose 
   }, [filteredTemplates]);
 
   const handleUseTemplate = (template: Template) => {
-    // Create new conversation with template prompt
-    createNewConversation();
-    const convId = useChatStore.getState().currentConversationId;
+    // Replace variables in prompt
+    let prompt = template.prompt;
+    prompt = prompt.replace(/\{\{topic\}\}/g, '[Your Topic Here]');
+    prompt = prompt.replace(/\{\{purpose\}\}/g, '[Email Purpose]');
+    prompt = prompt.replace(/\{\{code\}\}/g, '[Your Code Here]');
+    prompt = prompt.replace(/\{\{audience\}\}/g, '[Target Audience]');
+    prompt = prompt.replace(/\{\{tone\}\}/g, 'informative and engaging');
+    prompt = prompt.replace(/\{\{decision\}\}/g, '[Decision to Make]');
+    prompt = prompt.replace(/\{\{criteria\}\}/g, 'Impact, Cost, Time, Risk');
     
-    if (convId) {
-      // Replace variables in prompt
-      let prompt = template.prompt;
-      prompt = prompt.replace(/\{\{topic\}\}/g, '[Your Topic Here]');
-      prompt = prompt.replace(/\{\{purpose\}\}/g, '[Email Purpose]');
-      prompt = prompt.replace(/\{\{code\}\}/g, '[Your Code Here]');
-      prompt = prompt.replace(/\{\{audience\}\}/g, '[Target Audience]');
-      prompt = prompt.replace(/\{\{tone\}\}/g, 'informative and engaging');
-      prompt = prompt.replace(/\{\{decision\}\}/g, '[Decision to Make]');
-      prompt = prompt.replace(/\{\{criteria\}\}/g, 'Impact\nCost\nTime\nRisk');
-      
-      addMessage(convId, { 
-        role: 'user', 
-        content: `${template.icon} **${template.name}**\n\n${prompt}`
-      });
+    // Set the prompt to input text
+    setInputText(prompt);
+    
+    // Create new conversation if none selected
+    const state = useChatStore.getState();
+    if (!state.currentConversationId) {
+      createNewConversation();
     }
     
     onClose();
@@ -134,7 +132,7 @@ export const TemplatesPanel: React.FC<TemplatesPanelProps> = ({ isOpen, onClose 
         </div>
 
         <div className={styles.footer}>
-          <p>Click a template to start a new conversation</p>
+          <p>Click a template → goes to chat input → edit → send!</p>
         </div>
       </div>
     </>
