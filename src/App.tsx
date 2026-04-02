@@ -4,6 +4,7 @@ import ChatArea from './components/ChatArea';
 import Settings from './components/Settings';
 import { QuickSwitcher } from './components/QuickSwitcher';
 import { ShortcutsHelp } from './components/ShortcutsHelp';
+import { SharedChatView } from './components/SharedChatView';
 import { useChatStore } from './store/chatStore';
 import { useTheme } from './hooks/useTheme';
 
@@ -11,11 +12,23 @@ function App() {
   const [showSettings, setShowSettings] = useState(false);
   const [showQuickSwitcher, setShowQuickSwitcher] = useState(false);
   const [showShortcuts, setShowShortcuts] = useState(false);
+  const [shareId, setShareId] = useState<string | null>(null);
   
   const { createNewConversation, conversations, currentConversationId, setCurrentConversation } = useChatStore();
 
   // Initialize theme
   useTheme();
+
+  // Simple SPA routing for /share/:id
+  useEffect(() => {
+    const path = window.location.pathname;
+    const shareMatch = path.match(/^\/share\/([a-zA-Z0-9_-]+)$/);
+    if (shareMatch) {
+      setShareId(shareMatch[1]);
+    } else {
+      setShareId(null);
+    }
+  }, []);
 
   // Global keyboard shortcuts
   useEffect(() => {
@@ -74,6 +87,11 @@ function App() {
     document.addEventListener('keydown', handleKeyDown);
     return () => document.removeEventListener('keydown', handleKeyDown);
   }, [createNewConversation, conversations, currentConversationId, setCurrentConversation]);
+
+  // Shared link view
+  if (shareId) {
+    return <SharedChatView shareId={shareId} />;
+  }
 
   return (
     <div className="app-container">

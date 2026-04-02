@@ -368,8 +368,21 @@ const server = http.createServer((req, res) => {
     
     fs.access(fullPath, fs.constants.F_OK, (err) => {
         if (err) {
-            res.writeHead(404, { 'Content-Type': 'text/plain' });
-            res.end('Not Found');
+            // SPA fallback: serve index.html for client-side routing (e.g., /share/:id)
+            const indexPath = path.join(STATIC_DIR, 'index.html');
+            fs.readFile(indexPath, (err2, data) => {
+                if (err2) {
+                    res.writeHead(500, { 'Content-Type': 'text/plain' });
+                    res.end('Internal Server Error');
+                    return;
+                }
+                const content = data.toString().replace(
+                    '<!-- INJECT_CONFIG -->',
+                    `<script>window.API_TOKEN = '${API_TOKEN}';</script>`
+                );
+                res.writeHead(200, { 'Content-Type': 'text/html' });
+                res.end(content);
+            });
             return;
         }
         
