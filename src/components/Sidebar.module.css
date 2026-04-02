@@ -299,6 +299,42 @@
   color: #ef4444;
 }
 
+.pinIcon {
+  color: var(--accent);
+  flex-shrink: 0;
+}
+
+.pinBtn {
+  opacity: 0;
+  background: transparent;
+  border: none;
+  color: var(--text-muted);
+  cursor: pointer;
+  padding: 4px;
+  display: flex;
+  align-items: center;
+  border-radius: 4px;
+  transition: all var(--transition-fast);
+}
+
+.chatItem:hover .pinBtn {
+  opacity: 1;
+}
+
+.pinBtn:hover {
+  background-color: var(--bg-input);
+  color: var(--accent);
+}
+
+.pinBtn.pinned {
+  color: var(--accent);
+  opacity: 1;
+}
+
+.pinBtn.pinned:hover {
+  color: var(--accent);
+}
+
 .moveBtn {
   opacity: 0;
   background: transparent;

@@ -1,0 +1,292 @@
+.overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(0, 0, 0, 0.6);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 200;
+  backdrop-filter: blur(4px);
+}
+
+.modal {
+  background: var(--bg-modal);
+  border: 1px solid var(--border-sidebar);
+  border-radius: var(--radius-lg);
+  width: 90%;
+  max-width: 420px;
+  max-height: 85vh;
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+  box-shadow: var(--shadow-lg);
+}
+
+.header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 20px 24px;
+  border-bottom: 1px solid var(--border-sidebar);
+}
+
+.header h2 {
+  font-size: 1.125rem;
+  font-weight: 600;
+  color: var(--text-primary);
+}
+
+.closeBtn {
+  background: transparent;
+  border: none;
+  color: var(--text-muted);
+  cursor: pointer;
+  padding: 6px;
+  border-radius: var(--radius-sm);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all var(--transition-fast);
+}
+
+.closeBtn:hover {
+  background: var(--bg-sidebar-hover);
+  color: var(--text-primary);
+}
+
+.content {
+  flex: 1;
+  overflow-y: auto;
+  padding: 16px 0;
+}
+
+.section {
+  padding: 12px 24px;
+}
+
+.section:not(:last-child) {
+  border-bottom: 1px solid var(--border-sidebar);
+}
+
+.sectionTitle {
+  font-size: 0.75rem;
+  font-weight: 600;
+  color: var(--text-muted);
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  margin-bottom: 12px;
+}
+
+.settingItem {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.settingInfo {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.settingIcon {
+  width: 36px;
+  height: 36px;
+  background: var(--bg-input);
+  border-radius: var(--radius-sm);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--text-secondary);
+}
+
+.settingLabel {
+  font-size: 0.9rem;
+  font-weight: 500;
+  color: var(--text-primary);
+}
+
+.settingDesc {
+  font-size: 0.8rem;
+  color: var(--text-muted);
+  margin-top: 2px;
+}
+
+/* Toggle */
+.toggle {
+  width: 44px;
+  height: 26px;
+  background: var(--bg-input);
+  border: none;
+  border-radius: 13px;
+  cursor: pointer;
+  position: relative;
+  transition: background var(--transition-fast);
+}
+
+.toggle.on {
+  background: var(--accent);
+}
+
+.toggleKnob {
+  position: absolute;
+  top: 3px;
+  left: 3px;
+  width: 20px;
+  height: 20px;
+  background: white;
+  border-radius: 50%;
+  transition: transform var(--transition-fast);
+}
+
+.toggle.on .toggleKnob {
+  transform: translateX(18px);
+}
+
+/* Model List */
+.modelList {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.modelItem {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 12px 14px;
+  background: transparent;
+  border: 1px solid var(--border-sidebar);
+  border-radius: var(--radius-sm);
+  cursor: pointer;
+  transition: all var(--transition-fast);
+  color: var(--text-secondary);
+}
+
+.modelItem:hover {
+  background: var(--bg-sidebar-hover);
+  border-color: var(--text-muted);
+}
+
+.modelItem.active {
+  background: var(--bg-sidebar-hover);
+  border-color: var(--accent);
+  color: var(--text-primary);
+}
+
+.modelInfo {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  font-size: 0.9rem;
+}
+
+.checkIcon {
+  color: var(--accent);
+}
+
+/* Danger Button */
+.dangerBtn {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  width: 100%;
+  padding: 12px 14px;
+  background: transparent;
+  border: 1px solid #ef444433;
+  border-radius: var(--radius-sm);
+  color: #ef4444;
+  font-size: 0.9rem;
+  cursor: pointer;
+  transition: all var(--transition-fast);
+}
+
+.dangerBtn:hover {
+  background: #ef444411;
+  border-color: #ef4444;
+}
+
+/* Confirm Box */
+.confirmBox {
+  background: var(--bg-input);
+  border: 1px solid #ef444433;
+  border-radius: var(--radius-sm);
+  padding: 16px;
+}
+
+.confirmBox p {
+  font-size: 0.875rem;
+  color: var(--text-secondary);
+  margin-bottom: 12px;
+}
+
+.confirmActions {
+  display: flex;
+  gap: 8px;
+}
+
+.cancelBtn {
+  flex: 1;
+  padding: 10px;
+  background: var(--bg-sidebar);
+  border: 1px solid var(--border-sidebar);
+  border-radius: var(--radius-sm);
+  color: var(--text-primary);
+  font-size: 0.875rem;
+  cursor: pointer;
+  transition: all var(--transition-fast);
+}
+
+.cancelBtn:hover {
+  background: var(--bg-sidebar-hover);
+}
+
+.deleteBtn {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  padding: 10px;
+  background: #ef4444;
+  border: none;
+  border-radius: var(--radius-sm);
+  color: white;
+  font-size: 0.875rem;
+  font-weight: 500;
+  cursor: pointer;
+  transition: background var(--transition-fast);
+}
+
+.deleteBtn:hover {
+  background: #dc2626;
+}
+
+/* About */
+.aboutBox {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  padding: 12px 14px;
+  background: var(--bg-input);
+  border-radius: var(--radius-sm);
+}
+
+.aboutIcon {
+  font-size: 2rem;
+}
+
+.aboutName {
+  font-size: 0.9rem;
+  font-weight: 600;
+  color: var(--text-primary);
+}
+
+.aboutVersion {
+  font-size: 0.8rem;
+  color: var(--text-muted);
+  margin-top: 2px;
+}

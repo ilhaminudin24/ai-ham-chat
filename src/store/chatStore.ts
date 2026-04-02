@@ -13,6 +13,7 @@ export interface Conversation {
   messages: Message[];
   createdAt: string;
   folderId: string | null;
+  isPinned: boolean;
 }
 
 export interface Folder {
@@ -20,6 +21,11 @@ export interface Folder {
   name: string;
   icon: string;
   order: number;
+}
+
+export interface Settings {
+  soundEnabled: boolean;
+  defaultModel: string;
 }
 
 export interface ChatState {
@@ -30,6 +36,7 @@ export interface ChatState {
   selectedModel: string;
   folders: Folder[];
   searchQuery: string;
+  settings: Settings;
   
   // Actions
   createNewConversation: () => void;
@@ -42,6 +49,17 @@ export interface ChatState {
   setSelectedModel: (model: string) => void;
   deleteConversation: (id: string) => void;
   setSearchQuery: (query: string) => void;
+  
+  // Pin actions
+  pinConversation: (id: string) => void;
+  unpinConversation: (id: string) => void;
+  togglePin: (id: string) => void;
+  
+  // Settings actions
+  setSoundEnabled: (enabled: boolean) => void;
+  toggleSound: () => void;
+  setDefaultModel: (model: string) => void;
+  clearAllConversations: () => void;
   
   // Folder actions
   createFolder: (name: string, icon?: string) => void;
@@ -57,6 +75,11 @@ const defaultFolders: Folder[] = [
   { id: 'archived', name: 'Archived', icon: '📦', order: 3 },
 ];
 
+const defaultSettings: Settings = {
+  soundEnabled: true,
+  defaultModel: 'minimax/MiniMax-M2.7'
+};
+
 export const useChatStore = create<ChatState>()(
   persist(
     (set, get) => ({
@@ -67,6 +90,7 @@ export const useChatStore = create<ChatState>()(
       selectedModel: 'minimax/MiniMax-M2.7',
       folders: defaultFolders,
       searchQuery: '',
+      settings: defaultSettings,
 
       createNewConversation: () => {
         const id = Date.now().toString();
@@ -75,7 +99,8 @@ export const useChatStore = create<ChatState>()(
           title: 'New Chat',
           messages: [],
           createdAt: new Date().toISOString(),
-          folderId: null
+          folderId: null,
+          isPinned: false
         };
         set({
           conversations: [newConv, ...get().conversations],
@@ -142,6 +167,58 @@ export const useChatStore = create<ChatState>()(
         };
       }),
 
+      // Pin actions
+      pinConversation: (id) => {
+        set({
+          conversations: get().conversations.map(conv =>
+            conv.id === id ? { ...conv, isPinned: true } : conv
+          )
+        });
+      },
+
+      unpinConversation: (id) => {
+        set({
+          conversations: get().conversations.map(conv =>
+            conv.id === id ? { ...conv, isPinned: false } : conv
+          )
+        });
+      },
+
+      togglePin: (id) => {
+        set({
+          conversations: get().conversations.map(conv =>
+            conv.id === id ? { ...conv, isPinned: !conv.isPinned } : conv
+          )
+        });
+      },
+
+      // Settings actions
+      setSoundEnabled: (enabled) => {
+        set({
+          settings: { ...get().settings, soundEnabled: enabled }
+        });
+      },
+
+      toggleSound: () => {
+        set({
+          settings: { ...get().settings, soundEnabled: !get().settings.soundEnabled }
+        });
+      },
+
+      setDefaultModel: (model) => {
+        set({
+          settings: { ...get().settings, defaultModel: model },
+          selectedModel: model
+        });
+      },
+
+      clearAllConversations: () => {
+        set({
+          conversations: [],
+          currentConversationId: null
+        });
+      },
+
       createFolder: (name, icon = '📁') => {
         const newFolder: Folder = {
           id: Date.now().toString(),
@@ -153,7 +230,6 @@ export const useChatStore = create<ChatState>()(
       },
 
       deleteFolder: (id) => {
-        // Move all conversations in this folder to root (null)
         const updatedConvs = get().conversations.map(conv => {
           if (conv.folderId === id) {
             return { ...conv, folderId: null };
@@ -183,11 +259,12 @@ export const useChatStore = create<ChatState>()(
       }
     }),
     {
-      name: 'aiham_conversations_v3',
+      name: 'aiham_conversations_v4',
       partialize: (state) => ({ 
         conversations: state.conversations, 
         selectedModel: state.selectedModel,
-        folders: state.folders
+        folders: state.folders,
+        settings: state.settings
       }),
     }
   )

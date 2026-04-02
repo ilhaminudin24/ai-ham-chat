@@ -1,5 +1,5 @@
 import React, { useState, useMemo, useEffect, useRef } from 'react';
-import { MessageSquarePlus, MessageSquare, Trash2, Bot, Search, ChevronRight, MoreHorizontal, FolderPlus, X, FolderInput } from 'lucide-react';
+import { MessageSquarePlus, MessageSquare, Trash2, Bot, Search, ChevronRight, MoreHorizontal, FolderPlus, X, FolderInput, Pin } from 'lucide-react';
 import { useChatStore } from '../store/chatStore';
 import styles from './Sidebar.module.css';
 
@@ -17,7 +17,8 @@ const Sidebar: React.FC = () => {
     folders,
     moveToFolder,
     createFolder,
-    deleteFolder
+    deleteFolder,
+    togglePin
   } = useChatStore();
 
   const [expandedFolders, setExpandedFolders] = useState<string[]>(['today', 'work', 'personal']);
@@ -139,9 +140,20 @@ const Sidebar: React.FC = () => {
                     className={`${styles.chatItem} ${conv.id === currentConversationId ? styles.active : ''}`}
                     onClick={() => setCurrentConversation(conv.id)}
                   >
+                    {conv.isPinned && <Pin size={12} className={styles.pinIcon} />}
                     <MessageSquare size={16} />
                     <span className={styles.chatTitle}>{conv.title || 'New Chat'}</span>
                     <div className={styles.itemActions}>
+                      <button 
+                        className={`${styles.pinBtn} ${conv.isPinned ? styles.pinned : ''}`}
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          togglePin(conv.id);
+                        }}
+                        title={conv.isPinned ? 'Unpin' : 'Pin'}
+                      >
+                        <Pin size={12} />
+                      </button>
                       <button 
                         className={styles.moveBtn}
                         onClick={(e) => {
@@ -150,7 +162,7 @@ const Sidebar: React.FC = () => {
                         }}
                         title="Move to folder"
                       >
-                        <FolderInput size={14} />
+                        <FolderInput size={12} />
                       </button>
                       {showMoveMenu === conv.id && (
                         <div className={styles.moveMenu}>
@@ -295,9 +307,20 @@ const Sidebar: React.FC = () => {
                         className={`${styles.chatItem} ${conv.id === currentConversationId ? styles.active : ''}`}
                         onClick={() => setCurrentConversation(conv.id)}
                       >
+                        {conv.isPinned && <Pin size={12} className={styles.pinIcon} />}
                         <MessageSquare size={14} />
                         <span className={styles.chatTitle}>{conv.title || 'New Chat'}</span>
                         <div className={styles.itemActions}>
+                          <button 
+                            className={`${styles.pinBtn} ${conv.isPinned ? styles.pinned : ''}`}
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              togglePin(conv.id);
+                            }}
+                            title={conv.isPinned ? 'Unpin' : 'Pin'}
+                          >
+                            <Pin size={12} />
+                          </button>
                           <button 
                             className={styles.moveBtn}
                             onClick={(e) => {
