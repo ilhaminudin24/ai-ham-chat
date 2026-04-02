@@ -31,6 +31,7 @@ export interface Conversation {
   id: string;
   title: string;
   messages: Message[];
+  mainThreadMessages: Message[]; // preserved when switching branches
   branches: Branch[];
   activeBranchId: string | null;
   createdAt: string;
@@ -189,6 +190,7 @@ export const useChatStore = create<ChatState>()(
           id,
           title: 'New Chat',
           messages: [],
+          mainThreadMessages: [],
           branches: [],
           activeBranchId: null,
           createdAt: new Date().toISOString(),
@@ -420,7 +422,8 @@ export const useChatStore = create<ChatState>()(
             return {
               ...c,
               branches: [...c.branches, newBranch],
-              messages: branchMessages // Switch to branch view
+              messages: branchMessages, // Switch to branch view
+              mainThreadMessages: c.mainThreadMessages?.length ? c.mainThreadMessages : c.messages // Preserve main thread
             };
           })
         });
@@ -429,6 +432,21 @@ export const useChatStore = create<ChatState>()(
       switchBranch: (convId, branchId) => {
         const conv = get().conversations.find(c => c.id === convId);
         if (!conv) return;
+        
+        // If branchId is empty, switch to main thread
+        if (!branchId) {
+          set({
+            conversations: get().conversations.map(c => {
+              if (c.id !== convId) return c;
+              return {
+                ...c,
+                activeBranchId: null,
+                messages: c.mainThreadMessages?.length ? c.mainThreadMessages : c.messages
+              };
+            })
+          });
+          return;
+        }
         
         const branch = conv.branches.find(b => b.id === branchId);
         if (!branch) return;
@@ -449,9 +467,14 @@ export const useChatStore = create<ChatState>()(
         set({
           conversations: get().conversations.map(c => {
             if (c.id !== convId) return c;
+            const isDeletingActive = c.activeBranchId === branchId;
             return {
               ...c,
-              branches: c.branches.filter(b => b.id !== branchId)
+              branches: c.branches.filter(b => b.id !== branchId),
+              activeBranchId: isDeletingActive ? null : c.activeBranchId,
+              messages: isDeletingActive 
+                ? (c.mainThreadMessages?.length ? c.mainThreadMessages : c.messages)
+                : c.messages
             };
           })
         });
