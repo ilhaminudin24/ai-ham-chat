@@ -504,3 +504,23 @@
   justify-content: center;
   color: var(--text-primary);
 }
+
+.skillsBtn {
+  margin-left: auto;
+  background: transparent;
+  border: 1px solid var(--border-light);
+  border-radius: 8px;
+  padding: 8px;
+  color: var(--text-secondary);
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all var(--transition-fast);
+}
+
+.skillsBtn:hover {
+  background: var(--bg-sidebar-hover);
+  color: var(--text-primary);
+  border-color: var(--accent-brand);
+}

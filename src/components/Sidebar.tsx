@@ -1,6 +1,7 @@
 import React, { useState, useMemo, useEffect, useRef } from 'react';
-import { MessageSquarePlus, MessageSquare, Trash2, Bot, Search, ChevronRight, MoreHorizontal, FolderPlus, X, FolderInput, Pin } from 'lucide-react';
+import { MessageSquarePlus, MessageSquare, Trash2, Bot, Search, ChevronRight, MoreHorizontal, FolderPlus, X, FolderInput, Pin, Settings } from 'lucide-react';
 import { useChatStore } from '../store/chatStore';
+import { SkillsPanel } from './SkillsPanel';
 import styles from './Sidebar.module.css';
 
 const Sidebar: React.FC = () => {
@@ -18,8 +19,11 @@ const Sidebar: React.FC = () => {
     moveToFolder,
     createFolder,
     deleteFolder,
-    togglePin
+    togglePin,
+    setActiveSkills
   } = useChatStore();
+  
+  const [showSkills, setShowSkills] = useState(false);
 
   const [expandedFolders, setExpandedFolders] = useState<string[]>(['today', 'work', 'personal']);
   const [showFolderMenu, setShowFolderMenu] = useState<string | null>(null);
@@ -397,8 +401,21 @@ const Sidebar: React.FC = () => {
             <div style={{ fontWeight: 500, fontSize: '0.9rem' }}>AI-HAM</div>
             <div style={{ color: 'var(--text-muted)', fontSize: '0.8rem' }}>Online</div>
           </div>
+          <button 
+            className={styles.skillsBtn}
+            onClick={() => setShowSkills(true)}
+            title="Skills Manager"
+          >
+            <Settings size={18} />
+          </button>
         </div>
       </aside>
+      
+      <SkillsPanel 
+        isOpen={showSkills} 
+        onClose={() => setShowSkills(false)}
+        onSkillsChange={(skills) => setActiveSkills(skills)}
+      />
     </>
   );
 };

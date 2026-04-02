@@ -1,8 +1,12 @@
 import { useChatStore, type Message } from '../store/chatStore';
+import { generateSkillsSystemPrompt } from './skillApi';
 
 // Accessing injected config from server or Vite env fallback
 const API_TOKEN = (window as any).API_TOKEN || import.meta.env.VITE_API_TOKEN || '';
 const API_BASE = '/v1';
+
+// Base system prompt
+const BASE_SYSTEM_PROMPT = `You are AI-HAM, a helpful, intelligent, and friendly AI assistant. You are designed to assist Boss Ilham with various tasks including answering questions, providing information, helping with projects, and engaging in meaningful conversations. Your goal is to be helpful, accurate, and reliable. Always maintain a caring and supportive tone while being intelligent and practical in your responses.`;
 
 export const sendChatRequest = async (
   conversationId: string, 
@@ -17,19 +21,29 @@ export const sendChatRequest = async (
     // Initial placeholder for AI message
     store.addMessage(conversationId, { role: 'assistant', content: '' });
 
-    // Map to API format
-    const apiMessages = messages.map((m) => {
-      if (m.image) {
-        return {
-          role: m.role,
-          content: [
-            { type: 'text', text: m.content || '[Image]' },
-            { type: 'image_url', image_url: { url: m.image } }
-          ]
-        };
-      }
-      return { role: m.role, content: m.content };
-    });
+    // Build system prompt with skills
+    const activeSkills = store.activeSkills;
+    const skillsPrompt = generateSkillsSystemPrompt(activeSkills);
+    const fullSystemPrompt = skillsPrompt 
+      ? `${BASE_SYSTEM_PROMPT}\n\n${skillsPrompt}`
+      : BASE_SYSTEM_PROMPT;
+
+    // Map to API format - add system prompt at the beginning
+    const apiMessages = [
+      { role: 'system', content: fullSystemPrompt },
+      ...messages.map((m) => {
+        if (m.image) {
+          return {
+            role: m.role,
+            content: [
+              { type: 'text', text: m.content || '[Image]' },
+              { type: 'image_url', image_url: { url: m.image } }
+            ]
+          };
+        }
+        return { role: m.role, content: m.content };
+      })
+    ];
 
     const response = await fetch(`${API_BASE}/chat/completions`, {
       method: 'POST',

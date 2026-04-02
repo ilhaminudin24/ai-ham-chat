@@ -1,5 +1,6 @@
 import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
+import type { Skill } from '../types/skills';
 
 export interface Message {
   role: 'user' | 'assistant' | 'ai';
@@ -37,6 +38,7 @@ export interface ChatState {
   folders: Folder[];
   searchQuery: string;
   settings: Settings;
+  activeSkills: Skill[];
   
   // Actions
   createNewConversation: () => void;
@@ -66,6 +68,9 @@ export interface ChatState {
   deleteFolder: (id: string) => void;
   renameFolder: (id: string, name: string) => void;
   moveToFolder: (conversationId: string, folderId: string | null) => void;
+  
+  // Skills actions
+  setActiveSkills: (skills: Skill[]) => void;
 }
 
 const defaultFolders: Folder[] = [
@@ -91,6 +96,7 @@ export const useChatStore = create<ChatState>()(
       folders: defaultFolders,
       searchQuery: '',
       settings: defaultSettings,
+      activeSkills: [],
 
       createNewConversation: () => {
         const id = Date.now().toString();
@@ -256,6 +262,11 @@ export const useChatStore = create<ChatState>()(
             conv.id === conversationId ? { ...conv, folderId } : conv
           )
         });
+      },
+      
+      // Skills actions
+      setActiveSkills: (skills) => {
+        set({ activeSkills: skills.filter(s => s.enabled) });
       }
     }),
     {
@@ -264,7 +275,8 @@ export const useChatStore = create<ChatState>()(
         conversations: state.conversations, 
         selectedModel: state.selectedModel,
         folders: state.folders,
-        settings: state.settings
+        settings: state.settings,
+        activeSkills: state.activeSkills
       }),
     }
   )
