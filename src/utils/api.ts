@@ -53,26 +53,29 @@ export const sendChatRequest = async (
         const contentParts: any[] = [];
         const textContent = m.content || '';
 
-        // Only use array content format if there are images OR documents
-        if (images.length > 0 || docFiles.length > 0) {
-          if (textContent || images.length > 0) {
-            contentParts.push(
-              { type: 'text', text: textContent || '[Image]' },
-              ...images.map(url => ({ type: 'image_url', image_url: { url } }))
-            );
-          }
-          // Append documents as base64 text
+        // Handle images: use array content format with image_url parts
+        if (images.length > 0) {
+          contentParts.push(
+            { type: 'text', text: textContent || '[Image]' },
+            ...images.map(url => ({ type: 'image_url', image_url: { url } }))
+          );
+          // Append documents as base64 text (inside array content)
           for (const doc of docFiles) {
             const ext = doc.name.split('.').pop()?.toUpperCase() || 'FILE';
-            const docText = `[Attached file: ${doc.name} (${ext}) — base64 encoded]\n\`\`\`\n${doc.dataUrl}\n\`\`\``;
-            if (contentParts.length === 0) {
-              contentParts.push({ type: 'text', text: docText });
-            } else {
-              // Append to last text part
-              contentParts[0].text += '\n\n' + docText;
-            }
+            const docText = `\n\n[Attached file: ${doc.name} (${ext}) — base64 encoded]\n\`\`\`\n${doc.dataUrl}\n\`\`\``;
+            contentParts[0].text += docText;
           }
           return { role: m.role, content: contentParts };
+        }
+
+        // No images — for documents, embed as base64 text; for text only, use string
+        if (docFiles.length > 0) {
+          let textWithDocs = textContent;
+          for (const doc of docFiles) {
+            const ext = doc.name.split('.').pop()?.toUpperCase() || 'FILE';
+            textWithDocs += `\n\n[Attached file: ${doc.name} (${ext}) — base64 encoded]\n\`\`\`\n${doc.dataUrl}\n\`\`\``;
+          }
+          return { role: m.role, content: textWithDocs };
         }
 
         // No images, no documents — simple string content
