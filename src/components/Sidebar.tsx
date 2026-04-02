@@ -141,6 +141,33 @@ const Sidebar: React.FC = () => {
                   >
                     <MessageSquare size={16} />
                     <span className={styles.chatTitle}>{conv.title || 'New Chat'}</span>
+                    <div className={styles.itemActions}>
+                      <button 
+                        className={styles.moveBtn}
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          setShowMoveMenu(showMoveMenu === conv.id ? null : conv.id);
+                        }}
+                        title="Move to folder"
+                      >
+                        <FolderInput size={14} />
+                      </button>
+                      {showMoveMenu === conv.id && (
+                        <div className={styles.moveMenu}>
+                          {folders.map(f => (
+                            <button 
+                              key={f.id} 
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                handleMoveToFolder(conv.id, f.id);
+                              }}
+                            >
+                              {f.icon} {f.name}
+                            </button>
+                          ))}
+                        </div>
+                      )}
+                    </div>
                     <button 
                       className={styles.deleteBtn}
                       onClick={(e) => {
@@ -270,6 +297,33 @@ const Sidebar: React.FC = () => {
                       >
                         <MessageSquare size={14} />
                         <span className={styles.chatTitle}>{conv.title || 'New Chat'}</span>
+                        <div className={styles.itemActions}>
+                          <button 
+                            className={styles.moveBtn}
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              setShowMoveMenu(showMoveMenu === conv.id ? null : conv.id);
+                            }}
+                            title="Move to folder"
+                          >
+                            <FolderInput size={12} />
+                          </button>
+                          {showMoveMenu === conv.id && (
+                            <div className={styles.moveMenu}>
+                              {folders.map(f => (
+                                <button 
+                                  key={f.id} 
+                                  onClick={(e) => {
+                                    e.stopPropagation();
+                                    handleMoveToFolder(conv.id, f.id);
+                                  }}
+                                >
+                                  {f.icon} {f.name}
+                                </button>
+                              ))}
+                            </div>
+                          )}
+                        </div>
                         <button 
                           className={styles.deleteBtn}
                           onClick={(e) => {
