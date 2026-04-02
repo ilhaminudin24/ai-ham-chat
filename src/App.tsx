@@ -53,8 +53,13 @@ function App() {
         return;
       }
       
-      // Escape - Close modals
+      // Escape - Stop streaming or close modals
       if (e.key === 'Escape') {
+        const state = useChatStore.getState();
+        if (state.isStreaming) {
+          state.stopStreaming();
+          return;
+        }
         setShowQuickSwitcher(false);
         setShowShortcuts(false);
         setShowSettings(false);

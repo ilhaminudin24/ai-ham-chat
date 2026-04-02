@@ -14,9 +14,12 @@ export const sendChatRequest = async (
   modelId: string
 ) => {
   const store = useChatStore.getState();
-  
+  const abortController = new AbortController();
+
   try {
+    store.setAbortController(abortController);
     store.setStreaming(true);
+    store.setStreamingPhase('connecting');
 
     // Initial placeholder for AI message
     store.addMessage(conversationId, { role: 'assistant', content: '' });
@@ -45,6 +48,8 @@ export const sendChatRequest = async (
       })
     ];
 
+    store.setStreamingPhase('thinking');
+
     const response = await fetch(`${API_BASE}/chat/completions`, {
       method: 'POST',
       headers: {
@@ -53,10 +58,11 @@ export const sendChatRequest = async (
         'x-openclaw-model': modelId
       },
       body: JSON.stringify({
-        model: 'openclaw/default', // the actual API expects this static model value
+        model: 'openclaw/default',
         messages: apiMessages,
         stream: true
-      })
+      }),
+      signal: abortController.signal
     });
 
     if (!response.ok) {
@@ -67,6 +73,8 @@ export const sendChatRequest = async (
     const decoder = new TextDecoder();
     
     if (!reader) throw new Error("Stream not readable");
+
+    let firstToken = true;
 
     while (true) {
       const { done, value } = await reader.read();
@@ -86,6 +94,10 @@ export const sendChatRequest = async (
             const delta = json.choices?.[0]?.delta?.content;
             
             if (delta) {
+              if (firstToken) {
+                store.setStreamingPhase('streaming');
+                firstToken = false;
+              }
               store.updateLastMessage(conversationId, delta);
             }
           } catch (e) {
@@ -96,9 +108,15 @@ export const sendChatRequest = async (
       }
     }
   } catch (error: any) {
+    if (error.name === 'AbortError') {
+      // User cancelled streaming — don't show error
+      return;
+    }
     console.error('Streaming request failed:', error);
     store.updateLastMessage(conversationId, `\n\n**Error:** ${error.message || 'Unknown error occurred.'}`);
   } finally {
     store.setStreaming(false);
+    store.setStreamingPhase(null);
+    store.setAbortController(null);
   }
 };

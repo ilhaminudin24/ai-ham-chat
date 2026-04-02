@@ -166,3 +166,24 @@
     font-size: 16px; /* Prevent zoom on iOS */
   }
 }
+
+/* Stop Generation Button */
+.stopBtn {
+  background: #ef4444 !important;
+  color: white !important;
+  opacity: 1 !important;
+  cursor: pointer !important;
+  animation: pulseStop 1.5s ease-in-out infinite;
+  transition: transform 0.15s ease, box-shadow 0.15s ease;
+}
+
+.stopBtn:hover {
+  transform: scale(1.08) !important;
+  background: #dc2626 !important;
+  box-shadow: 0 0 16px rgba(239, 68, 68, 0.5);
+}
+
+@keyframes pulseStop {
+  0%, 100% { box-shadow: 0 0 0 0 rgba(239, 68, 68, 0.4); }
+  50% { box-shadow: 0 0 0 8px rgba(239, 68, 68, 0); }
+}

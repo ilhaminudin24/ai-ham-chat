@@ -6,6 +6,7 @@ export interface Message {
   role: 'user' | 'assistant' | 'ai';
   content: string;
   image?: string | null;
+  timestamp?: string;
 }
 
 export interface Branch {
@@ -59,6 +60,8 @@ export interface ChatState {
   activeSkills: Skill[];
   inputText: string;
   usageStats: UsageStats;
+  streamingPhase: 'connecting' | 'thinking' | 'streaming' | null;
+  abortController: AbortController | null;
   
   // Actions
   createNewConversation: () => void;
@@ -108,6 +111,12 @@ export interface ChatState {
   // Usage stats
   trackUsage: (tokens: number) => void;
   getUsageStats: () => UsageStats;
+  
+  // Stop & streaming phase actions
+  stopStreaming: () => void;
+  setStreamingPhase: (phase: ChatState['streamingPhase']) => void;
+  setAbortController: (controller: AbortController | null) => void;
+  regenerateLastResponse: (convId: string) => void;
 }
 
 const defaultFolders: Folder[] = [
@@ -144,6 +153,8 @@ export const useChatStore = create<ChatState>()(
       settings: defaultSettings,
       activeSkills: [],
       usageStats: defaultUsageStats,
+      streamingPhase: null,
+      abortController: null,
 
       createNewConversation: () => {
         const id = Date.now().toString();
@@ -169,14 +180,18 @@ export const useChatStore = create<ChatState>()(
       },
 
       addMessage: (conversationId, message) => {
+        const messageWithTimestamp = {
+          ...message,
+          timestamp: message.timestamp || new Date().toISOString()
+        };
         set((state) => {
           const updatedConvs = state.conversations.map((conv) => {
             if (conv.id === conversationId) {
-              const updatedMessages = [...conv.messages, message];
+              const updatedMessages = [...conv.messages, messageWithTimestamp];
               let newTitle = conv.title;
-              if (updatedMessages.length === 1 && message.role === 'user') {
-                newTitle = (message.content || 'Image').slice(0, 35);
-                if ((message.content || 'Image').length > 35) newTitle += '...';
+              if (updatedMessages.length === 1 && messageWithTimestamp.role === 'user') {
+                newTitle = (messageWithTimestamp.content || 'Image').slice(0, 35);
+                if ((messageWithTimestamp.content || 'Image').length > 35) newTitle += '...';
               }
               return { ...conv, messages: updatedMessages, title: newTitle };
             }
@@ -438,7 +453,36 @@ export const useChatStore = create<ChatState>()(
         });
       },
       
-      getUsageStats: () => get().usageStats
+      getUsageStats: () => get().usageStats,
+      
+      // Stop streaming
+      stopStreaming: () => {
+        const controller = get().abortController;
+        if (controller) {
+          controller.abort();
+        }
+        set({ isStreaming: false, streamingPhase: null, abortController: null });
+      },
+      
+      setStreamingPhase: (phase) => set({ streamingPhase: phase }),
+      setAbortController: (controller) => set({ abortController: controller }),
+      
+      // Regenerate last AI response
+      regenerateLastResponse: (convId) => {
+        set({
+          conversations: get().conversations.map(conv => {
+            if (conv.id !== convId) return conv;
+            const msgs = [...conv.messages];
+            for (let i = msgs.length - 1; i >= 0; i--) {
+              if (msgs[i].role === 'assistant') {
+                msgs.splice(i, 1);
+                break;
+              }
+            }
+            return { ...conv, messages: msgs };
+          })
+        });
+      }
     }),
     {
       name: 'aiham_conversations_v4',

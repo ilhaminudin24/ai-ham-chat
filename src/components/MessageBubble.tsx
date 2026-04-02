@@ -3,13 +3,25 @@ import ReactMarkdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
 import { Prism as SyntaxHighlighter } from 'react-syntax-highlighter';
 import { vscDarkPlus } from 'react-syntax-highlighter/dist/esm/styles/prism';
-import { User, Copy, Check, Bot, Table } from 'lucide-react';
+import { User, Copy, Check, Bot, Table, RefreshCw, ChevronDown } from 'lucide-react';
 import type { Message } from '../store/chatStore';
+import { formatRelativeTime, formatFullDateTime } from '../utils/time';
 import styles from './MessageBubble.module.css';
+
+const MODELS = [
+  { id: 'minimax/MiniMax-M2.7', display: 'MiniMax M2.7' },
+  { id: 'minimax/MiniMax-M2.5', display: 'MiniMax M2.5' },
+  { id: 'google-gemini-cli/gemini-3-flash-preview', display: 'Gemini 3 Flash' },
+  { id: 'google-gemini-cli/gemini-2.5-flash', display: 'Gemini 2.5 Flash' },
+  { id: 'google-gemini-cli/gemini-3.1-pro-preview', display: 'Gemini 3.1 Pro' },
+];
 
 interface Props {
   message: Message;
   onEdit?: () => void;
+  isLastAI?: boolean;
+  onRegenerate?: (modelId?: string) => void;
+  regenerationCount?: number;
 }
 
 // Parse markdown table to TSV format for Outlook
@@ -85,10 +97,11 @@ const CodeBlock = ({ node, inline, className, children, ...props }: any) => {
   );
 };
 
-export const MessageBubble: React.FC<Props> = ({ message, onEdit }) => {
+export const MessageBubble: React.FC<Props> = ({ message, onEdit, isLastAI, onRegenerate, regenerationCount }) => {
   const isUser = message.role === 'user';
   const [copied, setCopied] = useState(false);
   const [tableCopied, setTableCopied] = useState(false);
+  const [showModelMenu, setShowModelMenu] = useState(false);
   
   const containsTable = useMemo(() => hasTable(message.content), [message.content]);
   const tableTSV = useMemo(() => containsTable ? parseTableToTSV(message.content) : null, [message.content, containsTable]);
@@ -106,6 +119,11 @@ export const MessageBubble: React.FC<Props> = ({ message, onEdit }) => {
       setTimeout(() => setTableCopied(false), 2000);
     }
   };
+
+  const handleRegenerateWithModel = (modelId: string) => {
+    setShowModelMenu(false);
+    if (onRegenerate) onRegenerate(modelId);
+  };
   
   return (
     <div className={`${styles.messageContainer} ${isUser ? styles.user : styles.ai}`}>
@@ -115,7 +133,17 @@ export const MessageBubble: React.FC<Props> = ({ message, onEdit }) => {
       
       <div className={styles.contentWrapper}>
         <div className={styles.headerRow}>
-          <div className={styles.senderName}>{isUser ? 'You' : 'AI-HAM'}</div>
+          <div className={styles.senderName}>
+            {isUser ? 'You' : 'AI-HAM'}
+            {message.timestamp && (
+              <span 
+                className={styles.timestamp}
+                title={formatFullDateTime(message.timestamp)}
+              >
+                {formatRelativeTime(message.timestamp)}
+              </span>
+            )}
+          </div>
           <div className={styles.actions}>
             {!isUser && (
               <>
@@ -155,6 +183,48 @@ export const MessageBubble: React.FC<Props> = ({ message, onEdit }) => {
              <img src={message.image} alt="Uploaded attachment" className={styles.userImage} />
           )}
         </div>
+
+        {/* Regenerate area — only on last AI message */}
+        {isLastAI && onRegenerate && (
+          <div className={styles.regenerateArea}>
+            {regenerationCount && regenerationCount > 1 && (
+              <span className={styles.regenCount}>
+                Response {regenerationCount}
+              </span>
+            )}
+            <div className={styles.regenerateGroup}>
+              <button 
+                onClick={() => onRegenerate()} 
+                className={styles.regenerateBtn}
+                title="Regenerate with current model"
+              >
+                <RefreshCw size={14} />
+                Regenerate
+              </button>
+              <button 
+                className={styles.regenerateModelBtn}
+                onClick={() => setShowModelMenu(!showModelMenu)}
+                title="Regenerate with different model"
+              >
+                <ChevronDown size={14} />
+              </button>
+              {showModelMenu && (
+                <div className={styles.modelDropdown}>
+                  <div className={styles.modelDropdownTitle}>Regenerate with:</div>
+                  {MODELS.map(m => (
+                    <button
+                      key={m.id}
+                      className={styles.modelDropdownItem}
+                      onClick={() => handleRegenerateWithModel(m.id)}
+                    >
+                      {m.display}
+                    </button>
+                  ))}
+                </div>
+              )}
+            </div>
+          </div>
+        )}
       </div>
     </div>
   );

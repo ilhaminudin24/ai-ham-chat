@@ -1,5 +1,5 @@
 import React, { useState, useRef, useEffect } from 'react';
-import { Send, Image as ImageIcon, X } from 'lucide-react';
+import { Send, Image as ImageIcon, X, Square } from 'lucide-react';
 import { useChatStore } from '../store/chatStore';
 import { sendChatRequest } from '../utils/api';
 import styles from './ChatInput.module.css';
@@ -15,7 +15,8 @@ const ChatInput: React.FC = () => {
     isStreaming,
     selectedModel,
     inputText,
-    setInputText
+    setInputText,
+    stopStreaming
   } = useChatStore();
 
   // Use inputText from store as the text state
@@ -127,7 +128,7 @@ const ChatInput: React.FC = () => {
           <textarea
             ref={textareaRef}
             className={styles.textarea}
-            placeholder={isStreaming ? "AI-HAM is typing..." : "Message AI-HAM..."}
+            placeholder={isStreaming ? "AI-HAM is responding..." : "Message AI-HAM..."}
             value={text}
             onChange={(e) => handleTextChange(e.target.value)}
             onKeyDown={handleKeyDown}
@@ -135,13 +136,23 @@ const ChatInput: React.FC = () => {
             rows={1}
           />
           
-          <button 
-            className={styles.sendBtn} 
-            disabled={(!text.trim() && !image) || isStreaming}
-            onClick={handleSend}
-          >
-            <Send size={18} />
-          </button>
+          {isStreaming ? (
+            <button 
+              className={`${styles.sendBtn} ${styles.stopBtn}`}
+              onClick={stopStreaming}
+              title="Stop generating (Esc)"
+            >
+              <Square size={16} />
+            </button>
+          ) : (
+            <button 
+              className={styles.sendBtn} 
+              disabled={!text.trim() && !image}
+              onClick={handleSend}
+            >
+              <Send size={18} />
+            </button>
+          )}
         </div>
       </div>
     </div>
