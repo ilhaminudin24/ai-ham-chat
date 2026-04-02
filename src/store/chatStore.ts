@@ -71,6 +71,13 @@ export interface ChatState {
   
   // Skills actions
   setActiveSkills: (skills: Skill[]) => void;
+  
+  // Rename action
+  renameConversation: (id: string, newTitle: string) => void;
+  
+  // Edit message action
+  updateMessageContent: (convId: string, msgIndex: number, newContent: string) => void;
+  deleteMessage: (convId: string, msgIndex: number) => void;
 }
 
 const defaultFolders: Folder[] = [
@@ -267,6 +274,39 @@ export const useChatStore = create<ChatState>()(
       // Skills actions
       setActiveSkills: (skills) => {
         set({ activeSkills: skills.filter(s => s.enabled) });
+      },
+      
+      // Rename action
+      renameConversation: (id, newTitle) => {
+        set({
+          conversations: get().conversations.map(conv =>
+            conv.id === id ? { ...conv, title: newTitle } : conv
+          )
+        });
+      },
+      
+      // Edit message action
+      updateMessageContent: (convId, msgIndex, newContent) => {
+        set({
+          conversations: get().conversations.map(conv => {
+            if (conv.id !== convId) return conv;
+            const updatedMessages = [...conv.messages];
+            if (msgIndex >= 0 && msgIndex < updatedMessages.length) {
+              updatedMessages[msgIndex] = { ...updatedMessages[msgIndex], content: newContent };
+            }
+            return { ...conv, messages: updatedMessages };
+          })
+        });
+      },
+      
+      deleteMessage: (convId, msgIndex) => {
+        set({
+          conversations: get().conversations.map(conv => {
+            if (conv.id !== convId) return conv;
+            const updatedMessages = conv.messages.filter((_, i) => i !== msgIndex);
+            return { ...conv, messages: updatedMessages };
+          })
+        });
       }
     }),
     {

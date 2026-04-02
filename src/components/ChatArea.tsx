@@ -1,8 +1,11 @@
-import React, { useEffect, useRef } from 'react';
-import { Menu, Bot, Settings } from 'lucide-react';
+import React, { useEffect, useRef, useState } from 'react';
+import { Menu, Bot, Settings, FileText } from 'lucide-react';
 import { useChatStore } from '../store/chatStore';
 import { MessageBubble } from './MessageBubble';
 import ChatInput from './ChatInput';
+import { RenameModal } from './RenameModal';
+import { EditMessageModal } from './EditMessageModal';
+import { TemplatesPanel } from './TemplatesPanel';
 import styles from './ChatArea.module.css';
 
 interface ChatAreaProps {
@@ -16,8 +19,6 @@ const MODELS = [
   { id: 'google-gemini-cli/gemini-2.5-flash', display: 'Gemini 2.5 Flash' },
   { id: 'google-gemini-cli/gemini-3.1-pro-preview', display: 'Gemini 3.1 Pro' },
 ];
-
-// Notification sound as base64 (short chime)
 
 // Simple notification sound using Web Audio API
 const playNotificationSound = () => {
@@ -50,8 +51,14 @@ const ChatArea: React.FC<ChatAreaProps> = ({ onOpenSettings }) => {
     setSidebarOpen,
     selectedModel,
     setSelectedModel,
-    settings
+    settings,
+    renameConversation,
+    updateMessageContent
   } = useChatStore();
+
+  const [showRenameModal, setShowRenameModal] = useState(false);
+  const [editingMessage, setEditingMessage] = useState<{convId: string, msgIndex: number, content: string} | null>(null);
+  const [showTemplates, setShowTemplates] = useState(false);
 
   const scrollRef = useRef<HTMLDivElement>(null);
   const prevStreamingRef = useRef(isStreaming);
@@ -74,6 +81,36 @@ const ChatArea: React.FC<ChatAreaProps> = ({ onOpenSettings }) => {
     prevStreamingRef.current = isStreaming;
   }, [isStreaming, settings.soundEnabled]);
 
+  const handleRename = (newName: string) => {
+    if (currentConversationId) {
+      renameConversation(currentConversationId, newName);
+    }
+  };
+
+  const handleEditMessage = (msgIndex: number) => {
+    if (currentConversationId) {
+      const msg = messages[msgIndex];
+      setEditingMessage({
+        convId: currentConversationId,
+        msgIndex,
+        content: msg.content
+      });
+    }
+  };
+
+  const handleSaveEdit = (newContent: string) => {
+    if (editingMessage) {
+      // Update the message content
+      updateMessageContent(editingMessage.convId, editingMessage.msgIndex, newContent);
+      
+      // Remove all messages after the edited one (regenerate from that point)
+      // Actually, for simplicity, let's just update and let user manually resend
+      
+      // Clear the editing state
+      setEditingMessage(null);
+    }
+  };
+
   return (
     <main className={styles.mainContent}>
       <header className={styles.chatHeader}>
@@ -84,6 +121,15 @@ const ChatArea: React.FC<ChatAreaProps> = ({ onOpenSettings }) => {
           <span className={styles.headerTitle}>
             {currentConversation?.title || 'AI-HAM Chat'}
           </span>
+          {currentConversation && (
+            <button 
+              className={styles.renameBtn}
+              onClick={() => setShowRenameModal(true)}
+              title="Rename chat"
+            >
+              ✏️
+            </button>
+          )}
         </div>
         
         <div className={styles.headerRight}>
@@ -108,11 +154,24 @@ const ChatArea: React.FC<ChatAreaProps> = ({ onOpenSettings }) => {
             <div className={styles.welcomeIcon}><Bot size={48} /></div>
             <h2 className={styles.welcomeTitle}>Welcome to AI-HAM</h2>
             <p>Ask me anything — text or image. Switch models anytime.</p>
+            <div className={styles.welcomeActions}>
+              <button 
+                className={styles.templateBtn}
+                onClick={() => setShowTemplates(true)}
+              >
+                <FileText size={18} />
+                Browse Templates
+              </button>
+            </div>
           </div>
         ) : (
           <div className={styles.messagesContainer}>
             {messages.map((msg, idx) => (
-              <MessageBubble key={idx} message={msg} />
+              <MessageBubble 
+                key={idx} 
+                message={msg}
+                onEdit={msg.role === 'user' ? () => handleEditMessage(idx) : undefined}
+              />
             ))}
             
             {isStreaming && (
@@ -128,6 +187,26 @@ const ChatArea: React.FC<ChatAreaProps> = ({ onOpenSettings }) => {
 
       {/* Floating Input Area */}
       <ChatInput />
+
+      {/* Modals */}
+      <RenameModal
+        isOpen={showRenameModal}
+        currentName={currentConversation?.title || ''}
+        onClose={() => setShowRenameModal(false)}
+        onRename={handleRename}
+      />
+
+      <EditMessageModal
+        isOpen={!!editingMessage}
+        originalContent={editingMessage?.content || ''}
+        onClose={() => setEditingMessage(null)}
+        onSave={handleSaveEdit}
+      />
+
+      <TemplatesPanel
+        isOpen={showTemplates}
+        onClose={() => setShowTemplates(false)}
+      />
     </main>
   );
 };

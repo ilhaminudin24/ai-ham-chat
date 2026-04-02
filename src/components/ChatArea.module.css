@@ -51,6 +51,26 @@
   font-size: 1rem;
 }
 
+.renameBtn {
+  background: transparent;
+  border: none;
+  cursor: pointer;
+  font-size: 0.9rem;
+  padding: 4px 8px;
+  border-radius: 6px;
+  opacity: 0;
+  transition: opacity var(--transition-fast);
+}
+
+.chatHeader:hover .renameBtn {
+  opacity: 0.6;
+}
+
+.renameBtn:hover {
+  opacity: 1 !important;
+  background: var(--bg-sidebar-hover);
+}
+
 .headerRight {
   display: flex;
   align-items: center;
@@ -129,6 +149,31 @@
   font-weight: 600;
   color: var(--text-primary);
   margin-bottom: 8px;
+}
+
+.welcomeActions {
+  display: flex;
+  gap: 12px;
+  margin-top: 20px;
+}
+
+.templateBtn {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 12px 20px;
+  background: transparent;
+  border: 1px solid var(--accent-brand);
+  border-radius: 10px;
+  color: var(--accent-brand);
+  cursor: pointer;
+  font-size: 0.9rem;
+  font-weight: 500;
+  transition: all var(--transition-fast);
+}
+
+.templateBtn:hover {
+  background: rgba(194, 149, 91, 0.1);
 }
 
 /* Typing Indicator Animation */

@@ -9,6 +9,7 @@ import styles from './MessageBubble.module.css';
 
 interface Props {
   message: Message;
+  onEdit?: () => void;
 }
 
 // Parse markdown table to TSV format for Outlook
@@ -21,15 +22,11 @@ const parseTableToTSV = (content: string): string | null => {
   const headerRow = match[1];
   const dataRows = match[2].trim().split('\n');
   
-  // Extract headers
   const headers = headerRow.split('|').map(h => h.trim()).filter(h => h);
-  
-  // Extract all row data
   const rows = dataRows.map(row => 
     row.split('|').map(cell => cell.trim()).filter(cell => cell)
   );
   
-  // Build TSV string (tab-separated)
   const tsvParts: string[] = [];
   tsvParts.push(headers.join('\t'));
   rows.forEach(row => {
@@ -39,7 +36,6 @@ const parseTableToTSV = (content: string): string | null => {
   return tsvParts.join('\n');
 };
 
-// Check if message contains a table
 const hasTable = (content: string): boolean => {
   return /\|(.+)\|\n\|[-:\s|]+\|\n((?:\|.+\|\n?)+)/.test(content);
 };
@@ -89,7 +85,7 @@ const CodeBlock = ({ node, inline, className, children, ...props }: any) => {
   );
 };
 
-export const MessageBubble: React.FC<Props> = ({ message }) => {
+export const MessageBubble: React.FC<Props> = ({ message, onEdit }) => {
   const isUser = message.role === 'user';
   const [copied, setCopied] = useState(false);
   const [tableCopied, setTableCopied] = useState(false);
@@ -120,20 +116,27 @@ export const MessageBubble: React.FC<Props> = ({ message }) => {
       <div className={styles.contentWrapper}>
         <div className={styles.headerRow}>
           <div className={styles.senderName}>{isUser ? 'You' : 'AI-HAM'}</div>
-          {!isUser && (
-            <div className={styles.copyActions}>
-              {containsTable && (
-                <button onClick={handleCopyTable} className={styles.copyTableBtn} title="Copy table for Excel/Outlook">
-                  {tableCopied ? <Check size={14} /> : <Table size={14} />}
-                  {tableCopied ? 'Table Copied!' : 'Copy Table'}
+          <div className={styles.actions}>
+            {!isUser && (
+              <>
+                {containsTable && (
+                  <button onClick={handleCopyTable} className={styles.copyTableBtn} title="Copy table for Excel/Outlook">
+                    {tableCopied ? <Check size={14} /> : <Table size={14} />}
+                    {tableCopied ? 'Table Copied!' : 'Copy Table'}
+                  </button>
+                )}
+                <button onClick={handleCopyText} className={styles.copyTextBtn} title="Copy for email">
+                  {copied ? <Check size={14} /> : <Copy size={14} />}
+                  {copied ? 'Copied!' : 'Copy'}
                 </button>
-              )}
-              <button onClick={handleCopyText} className={styles.copyTextBtn} title="Copy for email">
-                {copied ? <Check size={14} /> : <Copy size={14} />}
-                {copied ? 'Copied!' : 'Copy'}
+              </>
+            )}
+            {isUser && onEdit && (
+              <button onClick={onEdit} className={styles.editBtn} title="Edit message">
+                ✏️
               </button>
-            </div>
-          )}
+            )}
+          </div>
         </div>
         
         <div className={styles.textContent}>
