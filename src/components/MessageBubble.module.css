@@ -50,8 +50,40 @@
 .senderName {
   font-weight: 600;
   font-size: 0.9rem;
-  margin-bottom: 4px;
   color: var(--text-primary);
+}
+
+.headerRow {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 4px;
+}
+
+.copyTextBtn {
+  background: transparent;
+  border: 1px solid var(--border-light);
+  border-radius: 6px;
+  padding: 4px 8px;
+  color: var(--text-secondary);
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  font-size: 0.75rem;
+  transition: all var(--transition-fast);
+  opacity: 0;
+}
+
+.messageContainer:hover .copyTextBtn,
+.copyTextBtn:focus {
+  opacity: 1;
+}
+
+.copyTextBtn:hover {
+  background: var(--bg-input-hover);
+  color: var(--text-primary);
+  border-color: var(--text-secondary);
 }
 
 .textContent {

@@ -58,6 +58,13 @@ const CodeBlock = ({ node, inline, className, children, ...props }: any) => {
 
 export const MessageBubble: React.FC<Props> = ({ message }) => {
   const isUser = message.role === 'user';
+  const [copied, setCopied] = useState(false);
+  
+  const handleCopyText = () => {
+    navigator.clipboard.writeText(message.content);
+    setCopied(true);
+    setTimeout(() => setCopied(false), 2000);
+  };
   
   return (
     <div className={`${styles.messageContainer} ${isUser ? styles.user : styles.ai}`}>
@@ -66,7 +73,15 @@ export const MessageBubble: React.FC<Props> = ({ message }) => {
       </div>
       
       <div className={styles.contentWrapper}>
-        <div className={styles.senderName}>{isUser ? 'You' : 'AI-HAM'}</div>
+        <div className={styles.headerRow}>
+          <div className={styles.senderName}>{isUser ? 'You' : 'AI-HAM'}</div>
+          {!isUser && (
+            <button onClick={handleCopyText} className={styles.copyTextBtn} title="Copy for email">
+              {copied ? <Check size={14} /> : <Copy size={14} />}
+              {copied ? 'Copied!' : 'Copy'}
+            </button>
+          )}
+        </div>
         
         <div className={styles.textContent}>
           {!isUser ? (
