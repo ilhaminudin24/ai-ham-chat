@@ -197,7 +197,16 @@ export const sendChatRequest = async (
     
     // Generate follow-up suggestions after EVERY AI response (not just first)
     const chatSettings = useChatStore.getState().settings;
-    if (updatedConv && chatSettings.enableFollowUpSuggestions) {
+    const suggestionsEnabled = chatSettings.enableFollowUpSuggestions !== false; // Default to true
+    
+    console.log('[Suggestions] Checking:', {
+      enableFollowUpSuggestions: chatSettings.enableFollowUpSuggestions,
+      suggestionsEnabled,
+      msgCount: updatedConv?.messages.length,
+      lastRole: updatedConv?.messages[updatedConv.messages.length - 1]?.role
+    });
+    
+    if (updatedConv && suggestionsEnabled) {
       const messages = updatedConv.messages;
       const lastMessage = messages[messages.length - 1];
       const userMessage = messages[messages.length - 2];
