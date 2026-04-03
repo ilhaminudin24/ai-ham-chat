@@ -548,16 +548,21 @@ const ChatArea: React.FC<ChatAreaProps> = ({ onOpenSettings }) => {
 
       {/* Follow-up Suggestions */}
       {followUpSuggestions.length > 0 && showFollowUpSuggestions && (
-        <SuggestionChips
-          suggestions={followUpSuggestions as any}
-          isOpen={true}
-          translateMode={translateMode}
-          onSuggestionClick={(text) => {
-            clearFollowUpSuggestions();
-            setInputText(text);
-          }}
-          onTranslateToggle={toggleTranslateMode}
-        />
+        <>
+          <div style={{ padding: '8px', textAlign: 'center', fontSize: '12px', color: 'var(--text-secondary)' }}>
+            Debug: {followUpSuggestions.length} suggestions received
+          </div>
+          <SuggestionChips
+            suggestions={followUpSuggestions as any}
+            isOpen={true}
+            translateMode={translateMode}
+            onSuggestionClick={(text) => {
+              clearFollowUpSuggestions();
+              setInputText(text);
+            }}
+            onTranslateToggle={toggleTranslateMode}
+          />
+        </>
       )}
 
       {/* Toast */}
