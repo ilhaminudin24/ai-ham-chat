@@ -174,6 +174,7 @@ export const sendChatRequest = async (
     // Auto-title generation after first AI response
     const updatedConv = useChatStore.getState().conversations.find(c => c.id === conversationId);
     
+    // Generate title only on first AI response (when 2 messages total)
     if (updatedConv && updatedConv.messages.length === 2) {
       // Always generate title after first AI response (msgCount === 2)
       // Ignore current title - we'll update it anyway
@@ -194,15 +195,18 @@ export const sendChatRequest = async (
       });
     }
     
-    // Generate follow-up suggestions if enabled
-    const currentSettings = useChatStore.getState().settings;
-    if (updatedConv && currentSettings.enableFollowUpSuggestions) {
-      const lastMessage = updatedConv.messages[updatedConv.messages.length - 1];
-      const userMessage = updatedConv.messages[updatedConv.messages.length - 2];
+    // Generate follow-up suggestions after EVERY AI response (not just first)
+    const chatSettings = useChatStore.getState().settings;
+    if (updatedConv && chatSettings.enableFollowUpSuggestions) {
+      const messages = updatedConv.messages;
+      const lastMessage = messages[messages.length - 1];
+      const userMessage = messages[messages.length - 2];
       
+      // Only generate if last message is from assistant and there's a user message before it
       if (lastMessage?.role === 'assistant' && userMessage?.role === 'user') {
-        console.log('[Suggestions] Generating suggestions...');
+        console.log('[Suggestions] Generating suggestions after AI response...');
         generateSuggestions(lastMessage.content, userMessage.content, (suggestions) => {
+          console.log('[Suggestions] Generated:', suggestions);
           useChatStore.getState().setFollowUpSuggestions(suggestions);
         });
       }
