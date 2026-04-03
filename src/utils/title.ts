@@ -1,6 +1,6 @@
 // Detect language from text (simple heuristic)
 export function detectLanguage(text: string): 'en' | 'id' | 'other' {
-  const idWords = ['yang', 'dan', 'di', 'ke', 'dari', 'ini', 'itu', 'dengan', 'untuk', 'ada', 'saya', 'kami', 'kita', 'mereka', 'bisa', 'tidak', 'akan', 'sudah', 'belum', 'juga', 'atau', 'tetapi', 'hanya', 'lebih', 'sangat', 'sekali', 'kapan', 'bagaimana', 'mengapa', 'apa', 'siapa', 'dimana', 'kenapa', 'berapa', 'merdeka', 'indonesia', 'buah', 'naga'];
+  const idWords = ['yang', 'dan', 'di', 'ke', 'dari', 'ini', 'itu', 'dengan', 'untuk', 'ada', 'saya', 'kami', 'kita', 'mereka', 'bisa', 'tidak', 'akan', 'sudah', 'belum', 'juga', 'atau', 'tetapi', 'hanya', 'lebih', 'sangat', 'sekali', 'kapan', 'bagaimana', 'mengapa', 'apa', 'siapa', 'dimana', 'kenapa', 'berapa', 'merdeka', 'indonesia', 'buah', 'naga', 'tanya', 'jawab', 'info', 'cek', 'lihat', 'cari'];
   
   const words = text.toLowerCase().split(/\s+/);
   let idCount = 0;
@@ -9,21 +9,18 @@ export function detectLanguage(text: string): 'en' | 'id' | 'other' {
     if (idWords.includes(word)) idCount++;
   }
   
-  if (idCount / Math.min(words.length, 50) > 0.15) return 'id';
+  if (idCount / Math.min(words.length, 50) > 0.1) return 'id';
   return 'en';
 }
 
 // Extract just the user question from messages
 function extractUserQuestion(messages: { role: string; content: string }[]): string {
-  // Find the user message
   const userMsg = messages.find(m => m.role === 'user');
   if (!userMsg) return '';
   
   let content = userMsg.content.trim();
-  
-  // If content is too long, truncate it for the prompt
-  if (content.length > 300) {
-    content = content.slice(0, 300) + '...';
+  if (content.length > 250) {
+    content = content.slice(0, 250) + '...';
   }
   
   return content;
@@ -38,26 +35,50 @@ export async function generateTitle(
     const lang = detectLanguage(messages.map(m => m.content).join(' '));
     const userQuestion = extractUserQuestion(messages);
     
-    // Smart prompts based on language
-    const prompts = {
-      id: {
-        system: `Kamu adalah AI yang specialises dalam membuat judul percakapan yang singkat dan informatif.
-BANarsi: Kembalikan HANYA judul (maksimum 4-5 kata), tanpa tanda kutip, tanpa emoji, tanpa penjelasan tambahan.
-Judul harus: (1) menggambarkan TOPIK UTAMA bukan kata pertama, (2) menggunakan bahasa natural, (3) mudah dipahami.
-Contoh judul bagus: "Sejarah Kemerdekaan Indonesia", "Manfaat Buah Naga", "Cara Buat Resume", "Jadwal Timnas Minggu Ini"`,
-        user: `Berikut pertanyaan user dalam percakapan:\n"${userQuestion}"\n\nBuatkan judul yang menjelaskan TOPIK atau TOPIK UTAMA dari pertanyaan ini. Fokus pada substansi bukan kata pertama.`
-      },
-      en: {
-        system: `You are an AI that specialises in creating short, informative conversation titles.
-RULES: Return ONLY the title (max 4-5 words), no quotes, no emoji, no additional explanations.
-The title must: (1) describe the MAIN TOPIC not first words, (2) use natural language, (3) be easy to understand.
-Good title examples: "History of Indonesian Independence", "Health Benefits of Dragon Fruit", "How to Write Resume", "Arsenal Match Schedule This Week"`,
-        user: `Here is the user's question in this conversation:\n"${userQuestion}"\n\nCreate a title that explains the TOPIC or MAIN SUBJECT of this question. Focus on substance, not just first words.`
-      }
-    };
-    
-    const prompt = (lang === 'id' || lang === 'en') ? prompts[lang] : prompts.en;
+    // Simple, direct prompts - Indonesian ONLY for Indonesian
+    const indonesianSystemPrompt = `Kamu: Pembuat judul percakapan Bahasa Indonesia.
+BERLANGSUNG: Jangan balas dengan bahasa lain!
+KETENTUAN:
+1. Gunakan Bahasa Indonesia saja
+2. Maksimum 4-5 kata
+3. Jangan tanda kutip
+4. Jangan emoji
+5. Fokus ke topik utama
 
+CONTOH JAWABAN YANG BENAR:
+- Sejarah Kemerdekaan Indonesia
+- Manfaat Buah Naga
+- Cara Membuat Resume
+- Jadwal Arsenal Minggu Ini
+
+CONTOH YANG SALAH (JANGAN SALAH):
+- kapan indonesia merdeka (terlalu pendek)
+- English response (bahasa inggris)
+- Fecha de independencia (bahasa spanyol)`;
+
+    const indonesianUserPrompt = `Pertanyaan: "${userQuestion}"
+Tulis judul pendek (4-5 kata) dalam Bahasa Indonesia yang menjelaskan topik utama pertanyaan ini.`;
+    
+    // English ONLY for English
+    const englishSystemPrompt = `You: Create English conversation titles only.
+RULES:
+1. Use English only - NO other languages!
+2. Maximum 4-5 words
+3. No quotes
+4. No emojis
+
+CORRECT EXAMPLES:
+- History of Indonesian Independence
+- Health Benefits of Dragon Fruit
+- How to Write a Professional Resume
+
+WRONG EXAMPLES:
+- sejarah kemerdekaan (Indonesian)
+- Fecha de independencia (Spanish)`;
+
+    const englishUserPrompt = `Question: "${userQuestion}"
+Write a short title (4-5 words) in English that describes the main topic.`;
+    
     const API_TOKEN = (window as any).API_TOKEN || import.meta.env.VITE_API_TOKEN || '';
     console.log('[AutoTitle] Generating with question:', userQuestion, 'lang:', lang);
     
@@ -65,16 +86,17 @@ Good title examples: "History of Indonesian Independence", "Health Benefits of D
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
-        'Authorization': `Bearer ${API_TOKEN}`
+        'Authorization': `Bearer ${API_TOKEN}`,
+        'x-openclaw-model': 'minimax/MiniMax-M2.5'  // Force use specific model that handles multilingual better
       },
       body: JSON.stringify({
         model: 'openclaw/default',
         messages: [
-          { role: 'system', content: prompt.system },
-          { role: 'user', content: prompt.user }
+          { role: 'system', content: lang === 'id' ? indonesianSystemPrompt : englishSystemPrompt },
+          { role: 'user', content: lang === 'id' ? indonesianUserPrompt : englishUserPrompt }
         ],
         max_tokens: 15,
-        temperature: 0.3
+        temperature: 0.1  // Very low for predictable output
       })
     });
 
@@ -85,7 +107,7 @@ Good title examples: "History of Indonesian Independence", "Health Benefits of D
     const data = await response.json();
     let title = data.choices?.[0]?.message?.content?.trim() || '';
 
-    // Clean up title - remove quotes, extra spaces, etc
+    // Clean up title
     title = title.replace(/^["']|["']$/g, '').replace(/\s+/g, ' ').trim();
     
     // Fallback if title is empty or too short
@@ -98,7 +120,14 @@ Good title examples: "History of Indonesian Independence", "Health Benefits of D
       title = title.slice(0, 47) + '...';
     }
 
-    // Suggest folder based on content keywords
+    // Additional cleanup - remove any remaining non-Indonesian/English chars
+    if (lang === 'id') {
+      // If result contains non-Indonesian characters, use fallback
+      if (/[ñáéíóúü]/i.test(title)) {
+        title = 'Percakapan Baru';
+      }
+    }
+
     const suggestedFolder = suggestFolder(messages.map(m => m.content).join(' '), lang);
 
     console.log('[AutoTitle] Generated title:', title, 'lang:', lang);
@@ -115,28 +144,21 @@ Good title examples: "History of Indonesian Independence", "Health Benefits of D
 function suggestFolder(text: string, lang: string): string | undefined {
   const lowerText = text.toLowerCase();
   
-  // Work-related keywords
   const workKeywords = lang === 'id' 
     ? ['kerja', 'pekerjaan', 'kantor', 'proyek', 'client', 'meeting', 'deadline', 'laporan', 'presentasi', 'email', 'bisnis', 'coding', 'programming', 'jualan']
     : ['work', 'job', 'project', 'client', 'meeting', 'deadline', 'report', 'presentation', 'business', 'office', 'coding', 'programming', 'sales'];
   
-  // Personal keywords
   const personalKeywords = lang === 'id'
     ? ['pribadi', 'keluarga', 'rumah', 'hobi', 'liburan', 'resep', 'kesehatan', 'olahraga', 'makan', 'nonton', 'game']
     : ['personal', 'family', 'home', 'hobby', 'vacation', 'health', 'fitness', 'recipe', 'food', 'watch', 'game'];
   
-  // Today keywords
   const todayKeywords = lang === 'id'
     ? ['hari', 'besok', 'kemarin', 'minggu', 'bulan', 'tahun', 'jadwal']
     : ['today', 'tomorrow', 'yesterday', 'week', 'month', 'year', 'schedule'];
 
-  const checkKeywords = (keywords: string[]) => {
-    return keywords.some(k => lowerText.includes(k));
-  };
-
-  if (checkKeywords(workKeywords)) return 'work';
-  if (checkKeywords(personalKeywords)) return 'personal';
-  if (checkKeywords(todayKeywords)) return 'today';
+  if (workKeywords.some(k => lowerText.includes(k))) return 'work';
+  if (personalKeywords.some(k => lowerText.includes(k))) return 'personal';
+  if (todayKeywords.some(k => lowerText.includes(k))) return 'today';
   
   return undefined;
 }
