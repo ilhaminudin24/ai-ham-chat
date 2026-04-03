@@ -223,7 +223,17 @@ export const useChatStore = create<ChatState>()(
                 newTitle = (messageWithTimestamp.content || 'Image').slice(0, 35);
                 if ((messageWithTimestamp.content || 'Image').length > 35) newTitle += '...';
               }
-              return { ...conv, messages: updatedMessages, title: newTitle };
+              // Sync messages to the active branch or mainThreadMessages
+              let updatedBranches = conv.branches;
+              let updatedMainThread = conv.mainThreadMessages;
+              if (conv.activeBranchId) {
+                updatedBranches = updatedBranches.map(b =>
+                  b.id === conv.activeBranchId ? { ...b, messages: updatedMessages } : b
+                );
+              } else {
+                updatedMainThread = updatedMessages;
+              }
+              return { ...conv, messages: updatedMessages, branches: updatedBranches, mainThreadMessages: updatedMainThread, title: newTitle };
             }
             return conv;
           });
@@ -243,7 +253,17 @@ export const useChatStore = create<ChatState>()(
                   content: lastMsg.content + content
                 };
               }
-              return { ...conv, messages: updatedMessages };
+              // Sync messages to the active branch or mainThreadMessages
+              let updatedBranches = conv.branches;
+              let updatedMainThread = conv.mainThreadMessages;
+              if (conv.activeBranchId) {
+                updatedBranches = updatedBranches.map(b =>
+                  b.id === conv.activeBranchId ? { ...b, messages: updatedMessages } : b
+                );
+              } else {
+                updatedMainThread = updatedMessages;
+              }
+              return { ...conv, messages: updatedMessages, branches: updatedBranches, mainThreadMessages: updatedMainThread };
             }
             return conv;
           });
@@ -419,12 +439,28 @@ export const useChatStore = create<ChatState>()(
         set({
           conversations: get().conversations.map(c => {
             if (c.id !== convId) return c;
-            // Migrate: ensure mainThreadMessages is set for old conversations
-            const mainMsgs = c.mainThreadMessages ?? c.messages;
+            // Save current state before creating branch
+            let mainMsgs: Message[];
+            let updatedBranches = [...c.branches];
+            
+            if (c.activeBranchId) {
+              // Currently on a branch — save current messages back to that branch first
+              updatedBranches = updatedBranches.map(b =>
+                b.id === c.activeBranchId ? { ...b, messages: c.messages } : b
+              );
+              // Preserve existing mainThreadMessages
+              mainMsgs = c.mainThreadMessages && c.mainThreadMessages.length > 0
+                ? c.mainThreadMessages : c.messages;
+            } else {
+              // Currently on main thread — save current messages as mainThreadMessages
+              mainMsgs = c.messages;
+            }
+            
             return {
               ...c,
-              branches: [...c.branches, newBranch],
+              branches: [...updatedBranches, newBranch],
               mainThreadMessages: mainMsgs,
+              activeBranchId: newBranch.id,
               messages: branchMessages // Switch to branch view
             };
           })
@@ -435,15 +471,30 @@ export const useChatStore = create<ChatState>()(
         const conv = get().conversations.find(c => c.id === convId);
         if (!conv) return;
         
+        // Save current messages back to the active source before switching
+        let updatedBranches = [...conv.branches];
+        let updatedMainThread = conv.mainThreadMessages;
+        
+        if (conv.activeBranchId) {
+          // Currently on a branch — save messages back to that branch
+          updatedBranches = updatedBranches.map(b =>
+            b.id === conv.activeBranchId ? { ...b, messages: conv.messages } : b
+          );
+        } else {
+          // Currently on main thread — save messages to mainThreadMessages
+          updatedMainThread = conv.messages;
+        }
+        
         // If branchId is empty, switch to main thread
         if (!branchId) {
+          const mainMsgs = updatedMainThread && updatedMainThread.length > 0
+            ? updatedMainThread : conv.messages;
           set({
             conversations: get().conversations.map(c => {
               if (c.id !== convId) return c;
-              // Migrate: ensure mainThreadMessages is set for old conversations
-              const mainMsgs = c.mainThreadMessages ?? c.messages;
               return {
                 ...c,
+                branches: updatedBranches,
                 mainThreadMessages: mainMsgs,
                 activeBranchId: null,
                 messages: mainMsgs
@@ -453,17 +504,17 @@ export const useChatStore = create<ChatState>()(
           return;
         }
         
-        const branch = conv.branches.find(b => b.id === branchId);
+        const branch = updatedBranches.find(b => b.id === branchId);
         if (!branch) return;
         
         set({
           conversations: get().conversations.map(c => {
             if (c.id !== convId) return c;
-            // Migrate: ensure mainThreadMessages is set for old conversations
-            const mainMsgs = c.mainThreadMessages ?? c.messages;
             return {
               ...c,
-              mainThreadMessages: mainMsgs,
+              branches: updatedBranches,
+              mainThreadMessages: updatedMainThread && updatedMainThread.length > 0
+                ? updatedMainThread : conv.messages,
               activeBranchId: branchId,
               messages: branch.messages
             };
@@ -476,13 +527,13 @@ export const useChatStore = create<ChatState>()(
           conversations: get().conversations.map(c => {
             if (c.id !== convId) return c;
             const isDeletingActive = c.activeBranchId === branchId;
+            const mainMsgs = c.mainThreadMessages && c.mainThreadMessages.length > 0
+              ? c.mainThreadMessages : c.messages;
             return {
               ...c,
               branches: c.branches.filter(b => b.id !== branchId),
               activeBranchId: isDeletingActive ? null : c.activeBranchId,
-              messages: isDeletingActive 
-                ? (c.mainThreadMessages?.length ? c.mainThreadMessages : c.messages)
-                : c.messages
+              messages: isDeletingActive ? mainMsgs : c.messages
             };
           })
         });
@@ -594,7 +645,8 @@ export const useChatStore = create<ChatState>()(
         conversations: state.conversations.map(conv => ({
           ...conv,
           // Ensure mainThreadMessages is always set (migration for old conversations)
-          mainThreadMessages: conv.mainThreadMessages ?? conv.messages
+          mainThreadMessages: conv.mainThreadMessages && conv.mainThreadMessages.length > 0
+            ? conv.mainThreadMessages : conv.messages
         })), 
         selectedModel: state.selectedModel,
         folders: state.folders,
