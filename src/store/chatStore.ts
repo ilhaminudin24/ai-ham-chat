@@ -52,6 +52,7 @@ export interface Settings {
   soundEnabled: boolean;
   defaultModel: string;
   theme: 'dark' | 'light' | 'system';
+  enableFollowUpSuggestions: boolean;
 }
 
 export interface UsageStats {
@@ -81,6 +82,11 @@ export interface ChatState {
   isGeneratingTitle: boolean;
   suggestedTitle: string | null;
   titleMessageIndex: number | null;
+  
+  // Follow-up suggestions
+  followUpSuggestions: { id: string; text: string; type: string }[];
+  showFollowUpSuggestions: boolean;
+  translateMode: 'to-en' | 'to-id';
   
   // Actions
   createNewConversation: () => void;
@@ -140,6 +146,12 @@ export interface ChatState {
   setGeneratingTitle: (isGenerating: boolean, title?: string | null, messageIndex?: number | null) => void;
   acceptSuggestedTitle: (conversationId: string) => void;
   dismissSuggestedTitle: () => void;
+  
+  // Follow-up suggestions actions
+  setFollowUpSuggestions: (suggestions: { id: string; text: string; type: string }[]) => void;
+  toggleFollowUpSuggestions: () => void;
+  toggleTranslateMode: () => void;
+  clearFollowUpSuggestions: () => void;
   regenerateLastResponse: (convId: string) => void;
   
   // Theme
@@ -166,7 +178,8 @@ const defaultFolders: Folder[] = [
 const defaultSettings: Settings = {
   soundEnabled: true,
   defaultModel: 'minimax/MiniMax-M2.7',
-  theme: 'dark'
+  theme: 'dark',
+  enableFollowUpSuggestions: true // Default ON
 };
 
 const defaultUsageStats: UsageStats = {
@@ -198,6 +211,11 @@ export const useChatStore = create<ChatState>()(
       isGeneratingTitle: false,
       suggestedTitle: null,
       titleMessageIndex: null,
+      
+      // Follow-up suggestions state
+      followUpSuggestions: [],
+      showFollowUpSuggestions: true, // Default ON
+      translateMode: 'to-en',
 
       createNewConversation: () => {
         const id = Date.now().toString();
@@ -638,6 +656,19 @@ export const useChatStore = create<ChatState>()(
         suggestedTitle: null,
         titleMessageIndex: null
       }),
+      
+      // Follow-up suggestions actions
+      setFollowUpSuggestions: (suggestions) => set({ followUpSuggestions: suggestions }),
+      
+      toggleFollowUpSuggestions: () => set((state) => ({ 
+        showFollowUpSuggestions: !state.showFollowUpSuggestions 
+      })),
+      
+      toggleTranslateMode: () => set((state) => ({ 
+        translateMode: state.translateMode === 'to-en' ? 'to-id' : 'to-en' 
+      })),
+      
+      clearFollowUpSuggestions: () => set({ followUpSuggestions: [] }),
       
       // Regenerate last AI response
       regenerateLastResponse: (convId) => {

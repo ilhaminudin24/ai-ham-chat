@@ -12,6 +12,7 @@ import { UsageStatsPanel } from './UsageStatsPanel';
 import { Toast } from './Toast';
 import { SearchBar } from './SearchBar';
 import { TagSelector } from './TagSelector';
+import { SuggestionChips } from './SuggestionChips';
 import { sendChatRequest } from '../utils/api';
 import { formatConversationAsMarkdown, formatConversationAsPlainText, copyToClipboard } from '../utils/clipboard';
 import { useSwipeGesture } from '../hooks/useSwipeGesture';
@@ -88,7 +89,12 @@ const ChatArea: React.FC<ChatAreaProps> = ({ onOpenSettings }) => {
     isGeneratingTitle,
     suggestedTitle,
     acceptSuggestedTitle,
-    dismissSuggestedTitle
+    dismissSuggestedTitle,
+    followUpSuggestions,
+    showFollowUpSuggestions,
+    translateMode,
+    toggleTranslateMode,
+    clearFollowUpSuggestions
   } = useChatStore();
 
   const { resolvedTheme } = useTheme();
@@ -539,6 +545,20 @@ const ChatArea: React.FC<ChatAreaProps> = ({ onOpenSettings }) => {
         onShowTemplates={() => setShowTemplates(true)}
         onShowToast={showToastMsg}
       />
+
+      {/* Follow-up Suggestions */}
+      {followUpSuggestions.length > 0 && showFollowUpSuggestions && (
+        <SuggestionChips
+          suggestions={followUpSuggestions as any}
+          isOpen={true}
+          translateMode={translateMode}
+          onSuggestionClick={(text) => {
+            clearFollowUpSuggestions();
+            setInputText(text);
+          }}
+          onTranslateToggle={toggleTranslateMode}
+        />
+      )}
 
       {/* Toast */}
       <Toast message={toastMsg} isVisible={showToast} onDismiss={() => setShowToast(false)} />

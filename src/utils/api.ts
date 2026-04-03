@@ -2,6 +2,7 @@ import { useChatStore, type Message, type FileAttachment } from '../store/chatSt
 import { generateSkillsSystemPrompt } from './skillApi';
 import { extractTextFromPdf } from './pdf';
 import { generateTitle } from './title';
+import { generateSuggestions } from './suggestions';
 
 // Accessing injected config from server or Vite env fallback
 const API_TOKEN = (window as any).API_TOKEN || import.meta.env.VITE_API_TOKEN || '';
@@ -172,6 +173,7 @@ export const sendChatRequest = async (
     
     // Auto-title generation after first AI response
     const updatedConv = useChatStore.getState().conversations.find(c => c.id === conversationId);
+    
     if (updatedConv && updatedConv.messages.length === 2) {
       // Always generate title after first AI response (msgCount === 2)
       // Ignore current title - we'll update it anyway
@@ -190,6 +192,20 @@ export const sendChatRequest = async (
           useChatStore.getState().setGeneratingTitle(false, null, null);
         }
       });
+    }
+    
+    // Generate follow-up suggestions if enabled
+    const currentSettings = useChatStore.getState().settings;
+    if (updatedConv && currentSettings.enableFollowUpSuggestions) {
+      const lastMessage = updatedConv.messages[updatedConv.messages.length - 1];
+      const userMessage = updatedConv.messages[updatedConv.messages.length - 2];
+      
+      if (lastMessage?.role === 'assistant' && userMessage?.role === 'user') {
+        console.log('[Suggestions] Generating suggestions...');
+        generateSuggestions(lastMessage.content, userMessage.content, (suggestions) => {
+          useChatStore.getState().setFollowUpSuggestions(suggestions);
+        });
+      }
     }
   }
 };
