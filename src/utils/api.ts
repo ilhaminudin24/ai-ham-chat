@@ -1,6 +1,7 @@
 import { useChatStore, type Message, type FileAttachment } from '../store/chatStore';
 import { generateSkillsSystemPrompt } from './skillApi';
 import { extractTextFromPdf } from './pdf';
+import { generateTitle } from './title';
 
 // Accessing injected config from server or Vite env fallback
 const API_TOKEN = (window as any).API_TOKEN || import.meta.env.VITE_API_TOKEN || '';
@@ -168,5 +169,27 @@ export const sendChatRequest = async (
     store.setStreaming(false);
     store.setStreamingPhase(null);
     store.setAbortController(null);
+    
+    // Auto-title generation after first AI response
+    const updatedConv = useChatStore.getState().conversations.find(c => c.id === conversationId);
+    if (updatedConv) {
+      const msgCount = updatedConv.messages.length;
+      // Only generate title if this is the first AI response (2 messages total)
+      // and the title is still the default "New Chat" style
+      const isDefaultTitle = updatedConv.title === 'New Chat' || 
+        updatedConv.title.startsWith('New Chat') ||
+        updatedConv.title.length < 10;
+      
+      if (msgCount === 2 && isDefaultTitle) {
+        // Start generating title
+        const aiMsgIndex = 1; // AI response is at index 1
+        store.setGeneratingTitle(true, null, aiMsgIndex);
+        
+        // Generate title in background (non-blocking)
+        generateTitle(updatedConv.messages, (title) => {
+          useChatStore.getState().setGeneratingTitle(false, title, aiMsgIndex);
+        });
+      }
+    }
   }
 };
