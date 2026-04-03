@@ -59,6 +59,7 @@ Good title examples: "History of Indonesian Independence", "Health Benefits of D
     const prompt = (lang === 'id' || lang === 'en') ? prompts[lang] : prompts.en;
 
     const API_TOKEN = (window as any).API_TOKEN || import.meta.env.VITE_API_TOKEN || '';
+    console.log('[AutoTitle] Generating with question:', userQuestion, 'lang:', lang);
     
     const response = await fetch('/v1/chat/completions', {
       method: 'POST',

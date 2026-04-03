@@ -173,35 +173,23 @@ export const sendChatRequest = async (
     // Auto-title generation after first AI response
     const updatedConv = useChatStore.getState().conversations.find(c => c.id === conversationId);
     if (updatedConv && updatedConv.messages.length === 2) {
-      // Only generate title if this is the first AI response (2 messages total: user + AI)
-      // and the title starts with "New Chat" or is short/default
-      const isDefaultTitle = updatedConv.title === 'New Chat' || 
-        updatedConv.title.startsWith('New Chat') ||
-        updatedConv.title === 'New Chat ' ||
-        updatedConv.title.length < 5;
+      // Always generate title after first AI response (msgCount === 2)
+      // Ignore current title - we'll update it anyway
+      console.log('[AutoTitle] Starting title generation after first AI response...');
       
-      console.log('[AutoTitle] Checking title generation:', {
-        msgCount: updatedConv.messages.length,
-        title: updatedConv.title,
-        isDefaultTitle
+      // Start generating title
+      const aiMsgIndex = 1;
+      store.setGeneratingTitle(true, null, aiMsgIndex);
+      
+      // Generate title in background (non-blocking)
+      generateTitle(updatedConv.messages, (title, suggestedFolder) => {
+        console.log('[AutoTitle] Generated:', title, suggestedFolder);
+        if (title) {
+          useChatStore.getState().setGeneratingTitle(false, title, aiMsgIndex);
+        } else {
+          useChatStore.getState().setGeneratingTitle(false, null, null);
+        }
       });
-      
-      if (isDefaultTitle) {
-        // Start generating title
-        const aiMsgIndex = 1; // AI response is at index 1
-        store.setGeneratingTitle(true, null, aiMsgIndex);
-        console.log('[AutoTitle] Starting title generation...');
-        
-        // Generate title in background (non-blocking)
-        generateTitle(updatedConv.messages, (title, suggestedFolder) => {
-          console.log('[AutoTitle] Generated:', title, suggestedFolder);
-          if (title) {
-            useChatStore.getState().setGeneratingTitle(false, title, aiMsgIndex);
-          } else {
-            useChatStore.getState().setGeneratingTitle(false, null, null);
-          }
-        });
-      }
     }
   }
 };

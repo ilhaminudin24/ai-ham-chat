@@ -234,7 +234,10 @@ export const useChatStore = create<ChatState>()(
             if (conv.id === conversationId) {
               const updatedMessages = [...conv.messages, messageWithTimestamp];
               let newTitle = conv.title;
-              if (updatedMessages.length === 1 && messageWithTimestamp.role === 'user') {
+              // Only set title from first message if title is still the default "New Chat"
+              // Don't override if title was already set (e.g., by auto-title generation)
+              const isDefaultTitle = conv.title === 'New Chat' || conv.title.startsWith('New Chat');
+              if (updatedMessages.length === 1 && messageWithTimestamp.role === 'user' && isDefaultTitle) {
                 newTitle = (messageWithTimestamp.content || 'Image').slice(0, 35);
                 if ((messageWithTimestamp.content || 'Image').length > 35) newTitle += '...';
               }
@@ -593,11 +596,28 @@ export const useChatStore = create<ChatState>()(
       setAbortController: (controller) => set({ abortController: controller }),
       
       // Auto-title generation actions
-      setGeneratingTitle: (isGenerating, title = null, messageIndex = null) => set({
-        isGeneratingTitle: isGenerating,
-        suggestedTitle: title,
-        titleMessageIndex: messageIndex
-      }),
+      setGeneratingTitle: (isGenerating, title = null, messageIndex = null) => {
+        set({
+          isGeneratingTitle: isGenerating,
+          suggestedTitle: title,
+          titleMessageIndex: messageIndex
+        });
+        
+        // Auto-accept generated title (no need for user to click accept)
+        if (!isGenerating && title && messageIndex !== null) {
+          const convId = get().currentConversationId;
+          if (convId) {
+            set({
+              conversations: get().conversations.map(c => {
+                if (c.id !== convId) return c;
+                return { ...c, title };
+              }),
+              suggestedTitle: null,
+              titleMessageIndex: null
+            });
+          }
+        }
+      },
       
       acceptSuggestedTitle: (conversationId) => {
         const state = get();
