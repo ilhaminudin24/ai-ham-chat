@@ -77,6 +77,11 @@ export interface ChatState {
   streamingPhase: 'connecting' | 'thinking' | 'streaming' | null;
   abortController: AbortController | null;
   
+  // Auto-title generation
+  isGeneratingTitle: boolean;
+  suggestedTitle: string | null;
+  titleMessageIndex: number | null;
+  
   // Actions
   createNewConversation: () => void;
   setCurrentConversation: (id: string) => void;
@@ -130,6 +135,11 @@ export interface ChatState {
   stopStreaming: () => void;
   setStreamingPhase: (phase: ChatState['streamingPhase']) => void;
   setAbortController: (controller: AbortController | null) => void;
+  
+  // Auto-title actions
+  setGeneratingTitle: (isGenerating: boolean, title?: string | null, messageIndex?: number | null) => void;
+  acceptSuggestedTitle: (conversationId: string) => void;
+  dismissSuggestedTitle: () => void;
   regenerateLastResponse: (convId: string) => void;
   
   // Theme
@@ -183,6 +193,11 @@ export const useChatStore = create<ChatState>()(
       usageStats: defaultUsageStats,
       streamingPhase: null,
       abortController: null,
+      
+      // Auto-title generation state
+      isGeneratingTitle: false,
+      suggestedTitle: null,
+      titleMessageIndex: null,
 
       createNewConversation: () => {
         const id = Date.now().toString();
@@ -576,6 +591,33 @@ export const useChatStore = create<ChatState>()(
       
       setStreamingPhase: (phase) => set({ streamingPhase: phase }),
       setAbortController: (controller) => set({ abortController: controller }),
+      
+      // Auto-title generation actions
+      setGeneratingTitle: (isGenerating, title = null, messageIndex = null) => set({
+        isGeneratingTitle: isGenerating,
+        suggestedTitle: title,
+        titleMessageIndex: messageIndex
+      }),
+      
+      acceptSuggestedTitle: (conversationId) => {
+        const state = get();
+        const title = state.suggestedTitle;
+        if (!title) return;
+        
+        set({
+          conversations: get().conversations.map(c => {
+            if (c.id !== conversationId) return c;
+            return { ...c, title };
+          }),
+          suggestedTitle: null,
+          titleMessageIndex: null
+        });
+      },
+      
+      dismissSuggestedTitle: () => set({
+        suggestedTitle: null,
+        titleMessageIndex: null
+      }),
       
       // Regenerate last AI response
       regenerateLastResponse: (convId) => {

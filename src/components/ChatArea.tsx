@@ -84,7 +84,11 @@ const ChatArea: React.FC<ChatAreaProps> = ({ onOpenSettings }) => {
     setInputText,
     addTag,
     removeTag,
-    createBranch
+    createBranch,
+    isGeneratingTitle,
+    suggestedTitle,
+    acceptSuggestedTitle,
+    dismissSuggestedTitle
   } = useChatStore();
 
   const { resolvedTheme } = useTheme();
@@ -336,6 +340,36 @@ const ChatArea: React.FC<ChatAreaProps> = ({ onOpenSettings }) => {
           <span className={styles.headerTitle}>
             {currentConversation?.title || 'AI-HAM Chat'}
           </span>
+          
+          {/* Auto-title generation indicator */}
+          {isGeneratingTitle && (
+            <span className={styles.titleLoading}>
+              <span className={styles.titleSpinner}>✨</span>
+              <span>Generating title...</span>
+            </span>
+          )}
+          
+          {/* Suggested title - accept or dismiss */}
+          {suggestedTitle && !isGeneratingTitle && currentConversation && (
+            <span className={styles.titleSuggestion}>
+              <span>Suggested: <strong>"{suggestedTitle}"</strong></span>
+              <button 
+                className={styles.acceptTitleBtn}
+                onClick={() => acceptSuggestedTitle(currentConversation.id)}
+                title="Accept suggested title"
+              >
+                ✓
+              </button>
+              <button 
+                className={styles.dismissTitleBtn}
+                onClick={() => dismissSuggestedTitle()}
+                title="Keep current title"
+              >
+                ✕
+              </button>
+            </span>
+          )}
+          
           {activeBranch && (
             <span className={styles.branchBadge} onClick={() => setShowBranchPanel(true)} title="Click to manage branches">
               🌿 {activeBranch.name}
