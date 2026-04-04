@@ -1,4 +1,4 @@
-import { OutputMode } from '../store/chatStore';
+import type { OutputMode } from '../store/chatStore';
 
 export interface PromptChainStep {
   id: string;
