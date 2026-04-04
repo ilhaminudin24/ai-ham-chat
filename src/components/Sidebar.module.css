@@ -39,6 +39,12 @@
     opacity: 1;
     pointer-events: auto;
   }
+
+  .mobileCloseBtn {
+    display: flex !important;
+    align-items: center;
+    justify-content: center;
+  }
 }
 
 .sidebarHeader {
@@ -66,6 +72,22 @@
 
 .newChatBtn:hover {
   background-color: var(--bg-sidebar-hover);
+}
+
+.mobileCloseBtn {
+  display: none;
+  background: transparent;
+  border: 1px solid var(--border-sidebar);
+  color: var(--text-muted);
+  cursor: pointer;
+  padding: 8px 10px;
+  border-radius: var(--radius-sm);
+  transition: all var(--transition-fast);
+}
+
+.mobileCloseBtn:hover {
+  background-color: var(--bg-sidebar-hover);
+  color: var(--text-primary);
 }
 
 /* Search */

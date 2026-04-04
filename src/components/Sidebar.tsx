@@ -117,10 +117,15 @@ const Sidebar: React.FC = () => {
       />
       <aside className={`${styles.sidebarContainer} ${isSidebarOpen ? styles.open : ''}`}>
         <div className={styles.sidebarHeader}>
-          <button className={styles.newChatBtn} onClick={createNewConversation}>
-            <MessageSquarePlus size={18} />
-            <span>New Chat</span>
-          </button>
+          <div style={{ display: 'flex', width: '100%', gap: '8px' }}>
+            <button className={styles.newChatBtn} onClick={() => { createNewConversation(); setSidebarOpen(false); }}>
+              <MessageSquarePlus size={18} />
+              <span>New Chat</span>
+            </button>
+            <button className={styles.mobileCloseBtn} onClick={() => setSidebarOpen(false)}>
+              <X size={20} />
+            </button>
+          </div>
         </div>
 
         {/* Search Bar */}
@@ -173,7 +178,7 @@ const Sidebar: React.FC = () => {
                   <div 
                     key={conv.id} 
                     className={`${styles.chatItem} ${conv.id === currentConversationId ? styles.active : ''}`}
-                    onClick={() => setCurrentConversation(conv.id)}
+                    onClick={() => { setCurrentConversation(conv.id); setSidebarOpen(false); }}
                   >
                     {conv.isPinned && <Pin size={12} className={styles.pinIcon} />}
                     <MessageSquare size={16} />
@@ -271,7 +276,7 @@ const Sidebar: React.FC = () => {
                         <div 
                           key={conv.id} 
                           className={`${styles.chatItem} ${conv.id === currentConversationId ? styles.active : ''}`}
-                          onClick={() => setCurrentConversation(conv.id)}
+                          onClick={() => { setCurrentConversation(conv.id); setSidebarOpen(false); }}
                         >
                           <MessageSquare size={14} />
                           <span className={styles.chatTitle}>{conv.title || 'New Chat'}</span>
@@ -340,7 +345,7 @@ const Sidebar: React.FC = () => {
                       <div 
                         key={conv.id} 
                         className={`${styles.chatItem} ${conv.id === currentConversationId ? styles.active : ''}`}
-                        onClick={() => setCurrentConversation(conv.id)}
+                        onClick={() => { setCurrentConversation(conv.id); setSidebarOpen(false); }}
                       >
                         {conv.isPinned && <Pin size={12} className={styles.pinIcon} />}
                         <MessageSquare size={14} />
