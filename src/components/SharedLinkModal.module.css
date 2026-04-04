@@ -85,18 +85,21 @@
 .createBtn {
   width: 100%;
   padding: 12px 20px;
-  background: linear-gradient(135deg, var(--accent-brand), var(--accent-strong));
-  border: none;
+  background: var(--button-primary-bg);
+  border: 1px solid var(--button-primary-border);
   border-radius: 10px;
-  color: white;
+  color: var(--button-primary-text);
   cursor: pointer;
   font-size: 0.95rem;
   font-weight: 600;
-  transition: opacity 0.15s;
+  transition: background-color var(--transition-fast), box-shadow var(--transition-fast), transform var(--transition-fast);
+  box-shadow: var(--button-primary-shadow);
 }
 
 .createBtn:hover:not(:disabled) {
-  opacity: 0.9;
+  background: var(--button-primary-bg-hover);
+  transform: translateY(-1px);
+  box-shadow: var(--button-primary-shadow-hover);
 }
 
 .createBtn:disabled {
@@ -125,10 +128,10 @@
   align-items: center;
   gap: 6px;
   padding: 10px 16px;
-  background: var(--bg-elevated);
-  border: 1px solid var(--border-light);
+  background: var(--button-ghost-bg);
+  border: 1px solid var(--button-ghost-border);
   border-radius: 8px;
-  color: var(--text-primary);
+  color: var(--button-ghost-text);
   cursor: pointer;
   font-size: 0.85rem;
   transition: all 0.15s;
@@ -136,7 +139,8 @@
 }
 
 .copyBtn:hover {
-  background: var(--bg-input-hover);
+  background: var(--button-ghost-bg-hover);
+  color: var(--text-primary);
 }
 
 .hint {

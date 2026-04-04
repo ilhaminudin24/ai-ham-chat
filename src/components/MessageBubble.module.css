@@ -10,7 +10,7 @@
 
 .messageContainer.user {
   background: var(--msg-user-bg);
-  border-color: rgba(124, 150, 255, 0.14);
+  border-color: var(--button-secondary-border);
   box-shadow: var(--shadow-card);
   margin-bottom: 20px;
 }
@@ -45,9 +45,9 @@
 }
 
 .avatar.user {
-  background: linear-gradient(135deg, var(--accent-brand) 0%, var(--accent-strong) 100%);
-  border: none;
-  color: white;
+  background: var(--avatar-primary-bg);
+  border: 1px solid var(--avatar-primary-border);
+  color: var(--avatar-primary-text);
 }
 
 .contentWrapper {
@@ -109,11 +109,11 @@
 }
 
 .copyTableBtn {
-  background: rgba(124, 150, 255, 0.1);
-  border: 1px solid rgba(124, 150, 255, 0.24);
+  background: var(--button-secondary-bg);
+  border: 1px solid var(--button-secondary-border);
   border-radius: 999px;
   padding: 6px 10px;
-  color: var(--accent-hover);
+  color: var(--button-secondary-text);
   cursor: pointer;
   display: flex;
   align-items: center;
@@ -123,7 +123,7 @@
 }
 
 .copyTableBtn:hover {
-  background: rgba(124, 150, 255, 0.18);
+  background: var(--button-secondary-bg-hover);
 }
 
 .editBtn {
@@ -200,7 +200,7 @@
 }
 
 .textContent :global(blockquote) {
-  border-left: 3px solid rgba(124, 150, 255, 0.36);
+  border-left: 3px solid var(--button-secondary-border);
   padding: 4px 0 4px 14px;
   color: var(--text-secondary);
   margin: 12px 0;

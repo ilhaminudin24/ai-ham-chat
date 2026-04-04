@@ -105,18 +105,20 @@
 
 .saveBtn {
   padding: 10px 24px;
-  background: linear-gradient(135deg, var(--accent-brand), var(--accent-strong));
-  border: none;
+  background: var(--button-primary-bg);
+  border: 1px solid var(--button-primary-border);
   border-radius: 8px;
-  color: white;
+  color: var(--button-primary-text);
   cursor: pointer;
   font-size: 0.9rem;
   font-weight: 600;
   transition: all 0.15s;
+  box-shadow: var(--button-primary-shadow);
 }
 
 .saveBtn:hover:not(:disabled) {
-  opacity: 0.9;
+  background: var(--button-primary-bg-hover);
+  box-shadow: var(--button-primary-shadow-hover);
 }
 
 .saveBtn:disabled {

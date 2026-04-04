@@ -369,7 +369,7 @@ const ChatArea: React.FC<ChatAreaProps> = ({ onOpenSettings }) => {
 
   // Swipe peek indicator styles
   const swipePeekStyle: React.CSSProperties = swipeState.isSwiping && swipeState.offsetX > 5
-    ? { boxShadow: `inset ${swipeState.offsetX}px 0 ${swipeState.offsetX * 2}px -${swipeState.offsetX}px rgba(139, 92, 246, 0.15)` }
+    ? { boxShadow: `inset ${swipeState.offsetX}px 0 ${swipeState.offsetX * 2}px -${swipeState.offsetX}px var(--accent-soft)` }
     : {};
 
   return (

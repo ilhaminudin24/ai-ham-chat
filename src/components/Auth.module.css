@@ -5,7 +5,7 @@
   height: 100vh;
   width: 100vw;
   background:
-    radial-gradient(circle at top, rgba(124, 150, 255, 0.12), transparent 28%),
+    radial-gradient(circle at top, var(--page-glow-strong), transparent 28%),
     linear-gradient(180deg, var(--bg-app) 0%, var(--bg-chat) 100%);
   color: var(--text-primary);
   font-family: inherit;
@@ -15,8 +15,8 @@
 .authCard {
   background: var(--bg-modal);
   padding: 3rem 2.5rem;
-  border-radius: 28px;
-  box-shadow: var(--shadow-dropdown);
+  border-radius: 24px;
+  box-shadow: var(--shadow-lg);
   width: 100%;
   max-width: 420px;
   border: 1px solid var(--border-light);
@@ -88,15 +88,15 @@
 
 .input:focus {
   outline: none;
-  border-color: var(--accent-brand, #C2955B);
-  background: var(--bg-app);
-  box-shadow: 0 0 0 1px var(--accent-brand, #C2955B);
+  border-color: var(--accent-brand);
+  background: var(--bg-elevated);
+  box-shadow: var(--focus-ring);
 }
 
 .submitBtn {
-  background: linear-gradient(135deg, var(--accent-brand), var(--accent-strong));
-  color: white;
-  border: none;
+  background: var(--button-primary-bg);
+  color: var(--button-primary-text);
+  border: 1px solid var(--button-primary-border);
   padding: 0.875rem;
   border-radius: var(--radius-md);
   font-size: 1rem;
@@ -108,12 +108,13 @@
   justify-content: center;
   align-items: center;
   gap: 0.5rem;
+  box-shadow: var(--button-primary-shadow);
 }
 
 .submitBtn:hover:not(:disabled) {
-  opacity: 0.9;
+  background: var(--button-primary-bg-hover);
   transform: translateY(-1px);
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+  box-shadow: var(--button-primary-shadow-hover);
 }
 
 .submitBtn:disabled {
@@ -148,7 +149,7 @@
 .toggleBtn {
   background: none;
   border: none;
-  color: var(--accent-brand, #C2955B);
+  color: var(--accent-brand);
   font-weight: 500;
   cursor: pointer;
   padding: 0 0.25rem;

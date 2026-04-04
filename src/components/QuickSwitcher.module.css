@@ -93,8 +93,9 @@
   width: 30px;
   height: 30px;
   border-radius: 10px;
-  background: linear-gradient(135deg, var(--accent-brand), var(--accent-strong));
-  color: white;
+  background: var(--avatar-primary-bg);
+  color: var(--avatar-primary-text);
+  border: 1px solid var(--avatar-primary-border);
   display: flex;
   align-items: center;
   justify-content: center;
@@ -146,7 +147,7 @@
   padding: 12px 20px;
   border-top: 1px solid var(--border-light);
   justify-content: center;
-  background: rgba(255, 255, 255, 0.02);
+  background: var(--bg-muted);
 }
 
 .footer span {

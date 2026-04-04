@@ -28,7 +28,7 @@
 }
 
 .inputBox:focus-within {
-  border-color: rgba(124, 150, 255, 0.38);
+  border-color: var(--button-secondary-border);
   background-color: var(--bg-input-hover);
   box-shadow: var(--shadow-input), var(--focus-ring);
 }
@@ -45,23 +45,24 @@
   display: flex;
   align-items: center;
   justify-content: center;
-  background: rgba(255, 255, 255, 0.02);
-  border: 1px solid transparent;
+  background: var(--button-ghost-bg);
+  border: 1px solid var(--button-ghost-border);
   border-radius: 12px;
-  color: var(--text-muted);
+  color: var(--button-ghost-text);
   cursor: pointer;
   transition: background-color var(--transition-fast), color var(--transition-fast);
 }
 
 .toolBtn:hover {
-  background-color: var(--bg-input-hover);
+  background-color: var(--button-ghost-bg-hover);
   color: var(--text-primary);
-  border-color: var(--border-light);
+  border-color: var(--button-secondary-border);
 }
 
 .toolBtn.active {
-  color: var(--accent-primary);
-  background-color: var(--accent-soft);
+  color: var(--button-secondary-text);
+  background-color: var(--button-secondary-bg);
+  border-color: var(--button-secondary-border);
 }
 
 .textarea {
@@ -88,20 +89,20 @@
   display: flex;
   align-items: center;
   justify-content: center;
-  background: linear-gradient(135deg, var(--accent-brand), var(--accent-strong));
-  color: white;
-  border: none;
+  background: var(--button-primary-bg);
+  color: var(--button-primary-text);
+  border: 1px solid var(--button-primary-border);
   border-radius: 14px;
   cursor: pointer;
-  box-shadow: 0 14px 28px rgba(79, 70, 229, 0.26);
+  box-shadow: var(--button-primary-shadow);
   transition: transform 0.1s ease, opacity var(--transition-fast), box-shadow var(--transition-fast);
   flex-shrink: 0;
 }
 
 .sendBtn:hover:not(:disabled) {
-  opacity: 0.96;
+  background: var(--button-primary-bg-hover);
   transform: scale(1.02);
-  box-shadow: 0 18px 32px rgba(79, 70, 229, 0.32);
+  box-shadow: var(--button-primary-shadow-hover);
 }
 
 .sendBtn:disabled {
@@ -144,7 +145,7 @@
 }
 
 .filePreviewItem:hover {
-  border-color: var(--accent-primary);
+  border-color: var(--button-secondary-border);
 }
 
 .filePreviewImg {
@@ -164,7 +165,7 @@
   gap: 2px;
   background: var(--bg-input);
   border-radius: 6px;
-  color: var(--accent-primary);
+  color: var(--button-secondary-text);
 }
 
 .filePreviewExt {
@@ -242,8 +243,8 @@
 }
 
 .addMoreBtn:hover {
-  border-color: var(--accent-primary);
-  color: var(--accent-primary);
+  border-color: var(--button-secondary-border);
+  color: var(--button-secondary-text);
   background: rgba(255, 255, 255, 0.02);
 }
 
@@ -261,7 +262,7 @@
   align-items: center;
   justify-content: center;
   gap: 8px;
-  background: rgba(124, 150, 255, 0.12);
+  background: var(--button-secondary-bg);
   border: 2px dashed var(--accent-brand);
   border-radius: 20px;
   color: var(--accent-brand);
@@ -341,8 +342,8 @@
 }
 
 .activeMode {
-  color: var(--accent-primary) !important;
-  background-color: rgba(139, 92, 246, 0.1) !important;
+  color: var(--button-secondary-text) !important;
+  background-color: var(--button-secondary-bg) !important;
 }
 
 .modeDropdownMenu {
@@ -399,7 +400,7 @@
 }
 
 .modeOption.selected {
-  background: rgba(139, 92, 246, 0.15);
-  color: var(--accent-primary);
+  background: var(--button-secondary-bg);
+  color: var(--button-secondary-text);
   font-weight: 500;
 }

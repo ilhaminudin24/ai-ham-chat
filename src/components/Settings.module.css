@@ -85,7 +85,8 @@
 .themeSelector {
   display: flex;
   gap: 6px;
-  background: var(--bg-elevated);
+  background: var(--bg-input);
+  border: 1px solid var(--border-light);
   border-radius: var(--radius-sm);
   padding: 4px;
 }
@@ -111,10 +112,10 @@
 }
 
 .themeBtn.active {
-  background: var(--bg-sidebar-hover);
-  color: var(--text-primary);
+  background: var(--button-secondary-bg);
+  color: var(--button-secondary-text);
   font-weight: 500;
-  box-shadow: 0 1px 3px rgba(0,0,0,0.2);
+  box-shadow: var(--shadow-button-soft);
 }
 
 .settingItem {
@@ -165,7 +166,7 @@
 }
 
 .toggle.on {
-  background: var(--accent);
+  background: var(--accent-brand);
 }
 
 .toggleKnob {
@@ -209,9 +210,9 @@
 }
 
 .modelItem.active {
-  background: var(--bg-sidebar-hover);
-  border-color: var(--accent);
-  color: var(--text-primary);
+  background: var(--button-secondary-bg);
+  border-color: var(--button-secondary-border);
+  color: var(--button-secondary-text);
 }
 
 .modelInfo {
