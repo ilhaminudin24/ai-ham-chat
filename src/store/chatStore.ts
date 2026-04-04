@@ -194,15 +194,13 @@ const defaultUsageStats: UsageStats = {
   dailyStats: {}
 };
 
-const isActiveUntouchedDraft = (
-  conversation: Conversation | undefined,
-  inputText: string
+const isEmptyNewChatDraft = (
+  conversation: Conversation | undefined
 ): conversation is Conversation =>
   Boolean(
     conversation &&
     conversation.title === 'New Chat' &&
-    conversation.messages.length === 0 &&
-    inputText.trim().length === 0
+    conversation.messages.length === 0
   );
 
 export const useChatStore = create<ChatState>()(
@@ -237,13 +235,11 @@ export const useChatStore = create<ChatState>()(
 
       createNewConversation: () => {
         const state = get();
-        const activeConversation = state.currentConversationId
-          ? state.conversations.find(conv => conv.id === state.currentConversationId)
-          : undefined;
+        const existingDraft = state.conversations.find(isEmptyNewChatDraft);
 
-        if (isActiveUntouchedDraft(activeConversation, state.inputText)) {
+        if (existingDraft) {
           set({
-            currentConversationId: activeConversation.id,
+            currentConversationId: existingDraft.id,
             isSidebarOpen: false
           });
           return;
