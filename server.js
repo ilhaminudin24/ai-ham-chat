@@ -298,7 +298,7 @@ app.delete('/api/shared/:id', (req, res) => {
 app.use(express.static(STATIC_DIR, { index: false }));
 
 // Fallback all other routes to SPA index.html
-app.get('*', (req, res) => {
+app.get(/.*/, (req, res) => {
     const indexPath = path.join(STATIC_DIR, 'index.html');
     
     fs.readFile(indexPath, 'utf8', (err, data) => {
