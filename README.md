@@ -78,10 +78,11 @@ Fully responsive design with mobile-specific fixes:
 | Layer | Technology |
 |-------|------------|
 | **Frontend** | React 19, TypeScript, Vite |
-| **State** | Zustand (LocalStorage persistence) |
+| **State** | Zustand (Cloud synced via Supabase) |
+| **Database & Auth**| Supabase (PostgreSQL) |
 | **Markdown** | react-markdown + remark-gfm + react-syntax-highlighter |
 | **Icons** | lucide-react |
-| **Backend** | Node.js (static file server + API proxy) |
+| **Backend** | Node.js + Express.js (static file server + API proxy) |
 | **Proxy/SSL** | Caddy (Let's Encrypt) |
 | **AI Engine** | OpenClaw Gateway + MiniMax/Gemini |
 
@@ -108,9 +109,11 @@ cp .env.example .env
 nano .env
 ```
 
-Add your gateway token:
+Add your gateway token and Supabase credentials:
 ```bash
-echo 'GATEWAY_TOKEN=your_openclaw_gateway_token' > .env
+GATEWAY_TOKEN=your_openclaw_gateway_token
+VITE_SUPABASE_URL=your_supabase_project_url
+VITE_SUPABASE_ANON_KEY=your_supabase_anon_key
 ```
 
 ### 3. Build for Production
@@ -141,6 +144,7 @@ chat.ilhmndn.site {
 ai-ham-chat/
 ├── src/
 │   ├── components/
+│   │   ├── Auth.tsx              # 🔒 Supabase Login/Register
 │   │   ├── BranchPanel.tsx       # 🌿 Branch thread management
 │   │   ├── ChatArea.tsx          # Main chat view
 │   │   ├── ChatInput.tsx         # Message input with image upload
@@ -161,9 +165,12 @@ ai-ham-chat/
 │   │   └── variables.css         # CSS custom properties
 │   ├── types/
 │   │   └── features.ts           # TypeScript interfaces
+│   ├── utils/
+│   │   ├── supabase.ts           # Supabase client config
+│   │   └── syncStore.ts          # Zustand to Supabase cloud sync
 │   ├── App.tsx                   # Root component
 │   └── main.tsx                  # React entry point
-├── server.cjs                    # Node.js backend (port 3000)
+├── server.js                     # Express.js backend (port 3000)
 ├── index.html                    # Vite entry
 ├── package.json
 ├── vite.config.ts
@@ -213,6 +220,12 @@ npm run dev
 ---
 
 ## 📜 Recent Changelog
+
+### v2026.04.04 (Major Architecture Upgrade)
+- **feat:** Supabase Integration — Conversation history now syncs to the cloud securely
+- **feat:** Authentication — Added Login/Signup gateway using Supabase Auth
+- **refactor:** Express.js Backend — Upgraded local HTTP server to a production-ready Express framework (with CORS & Helmet)
+- **feat:** Background Sync — Zustand state changes automatically upsert into Postgres
 
 ### v2026.04.02
 - **feat:** Branch Thread — create, switch, and delete conversation branches
