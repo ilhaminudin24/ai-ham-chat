@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import { supabase } from '../utils/supabase';
+import { Bot, AlertCircle, ArrowRight, Loader2 } from 'lucide-react';
 import styles from './Auth.module.css';
 
 export const Auth: React.FC = () => {
@@ -27,11 +28,9 @@ export const Auth: React.FC = () => {
           password,
         });
         if (error) throw error;
-        // Optionally tell them to check email here if email confirm is ON
-        setErrorMsg('Berhasil mendaftar! Anda sekarang akan login...');
       }
     } catch (error: any) {
-      setErrorMsg(error.message || 'Error occurred during authentication');
+      setErrorMsg(error.message || 'Terjadi kesalahan saat otentikasi. Silakan coba lagi.');
     } finally {
       setLoading(false);
     }
@@ -40,24 +39,37 @@ export const Auth: React.FC = () => {
   return (
     <div className={styles.authContainer}>
       <div className={styles.authCard}>
-        <h2 className={styles.authTitle}>
-          {isLogin ? 'Login AI-HAM Chat' : 'Daftar AI-HAM Chat'}
-        </h2>
+        
+        <div className={styles.authHeader}>
+          <div className={styles.logoIcon}>
+            <Bot size={36} strokeWidth={1.5} />
+          </div>
+          <div>
+            <h2 className={styles.authTitle}>
+              {isLogin ? 'Welcome back' : 'Create an account'}
+            </h2>
+            <p className={styles.authSubtitle}>
+              {isLogin ? 'Log in to continue to AI-HAM Chat.' : 'Sign up to continue to AI-HAM Chat.'}
+            </p>
+          </div>
+        </div>
+
         <form className={styles.authForm} onSubmit={handleAuth}>
           <div className={styles.inputGroup}>
-            <label htmlFor="email">Email</label>
+            <label className={styles.inputLabel} htmlFor="email">Email address</label>
             <input
               id="email"
               className={styles.input}
               type="email"
-              placeholder="nama@email.com"
+              placeholder="e.g. boss@ilhmndn.site"
               value={email}
               required
               onChange={(e) => setEmail(e.target.value)}
             />
           </div>
+          
           <div className={styles.inputGroup}>
-            <label htmlFor="password">Password</label>
+            <label className={styles.inputLabel} htmlFor="password">Password</label>
             <input
               id="password"
               className={styles.input}
@@ -68,13 +80,28 @@ export const Auth: React.FC = () => {
               onChange={(e) => setPassword(e.target.value)}
             />
           </div>
-          {errorMsg && <p className={styles.errorMsg}>{errorMsg}</p>}
+
+          {errorMsg && (
+            <div className={styles.errorMsg}>
+              <AlertCircle size={18} style={{ flexShrink: 0, marginTop: '2px' }} />
+              <span>{errorMsg}</span>
+            </div>
+          )}
+
           <button className={styles.submitBtn} type="submit" disabled={loading}>
-            {loading ? 'Please wait...' : isLogin ? 'Masuk' : 'Daftar'}
+            {loading ? (
+              <Loader2 size={18} className="animate-spin" />
+            ) : (
+              <>
+                {isLogin ? 'Continue' : 'Sign up'}
+                <ArrowRight size={18} />
+              </>
+            )}
           </button>
         </form>
+
         <p className={styles.toggleMsg}>
-          {isLogin ? 'Belum punya akun?' : 'Sudah punya akun?'}
+          {isLogin ? 'Don\'t have an account?' : 'Already have an account?'}
           <button
             type="button"
             className={styles.toggleBtn}
@@ -83,9 +110,10 @@ export const Auth: React.FC = () => {
               setErrorMsg(null);
             }}
           >
-            {isLogin ? 'Daftar di sini' : 'Login di sini'}
+            {isLogin ? 'Sign up' : 'Log in'}
           </button>
         </p>
+
       </div>
     </div>
   );
