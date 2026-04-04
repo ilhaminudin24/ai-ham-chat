@@ -1,5 +1,5 @@
 import React, { useEffect, useRef, useState, useCallback, useMemo } from 'react';
-import { Menu, Bot, Settings, FileText, Link, GitBranch, BarChart3, ClipboardCopy, Brain, Sun, Moon, Search, Tag } from 'lucide-react';
+import { Menu, Bot, Settings, FileText, Link, GitBranch, BarChart3, ClipboardCopy, Brain, Sun, Moon, Search, Tag, MoreVertical } from 'lucide-react';
 import { useChatStore } from '../store/chatStore';
 import { MessageBubble } from './MessageBubble';
 import ChatInput from './ChatInput';
@@ -108,6 +108,7 @@ const ChatArea: React.FC<ChatAreaProps> = ({ onOpenSettings }) => {
   const [showCopyMenu, setShowCopyMenu] = useState(false);
   const [showSearchBar, setShowSearchBar] = useState(false);
   const [showTagSelector, setShowTagSelector] = useState(false);
+  const [showMobileMenu, setShowMobileMenu] = useState(false);
 
   // Toast state
   const [showToast, setShowToast] = useState(false);
@@ -410,13 +411,14 @@ const ChatArea: React.FC<ChatAreaProps> = ({ onOpenSettings }) => {
         <div className={styles.headerRight}>
           {currentConversation && messages.length > 0 && (
             <>
-              <button className={styles.actionBtn} onClick={() => setShowSearchBar(!showSearchBar)} title="Search (Ctrl+F)">
+              {/* Desktop Actions */}
+              <button className={`${styles.actionBtn} ${styles.desktopOnly}`} onClick={() => setShowSearchBar(!showSearchBar)} title="Search (Ctrl+F)">
                 <Search size={16} />
               </button>
-              <button className={styles.actionBtn} onClick={() => setShowTagSelector(true)} title="Tags (Ctrl+T)">
+              <button className={`${styles.actionBtn} ${styles.desktopOnly}`} onClick={() => setShowTagSelector(true)} title="Tags (Ctrl+T)">
                 <Tag size={16} />
               </button>
-              <div className={styles.copyMenuWrapper}>
+              <div className={`${styles.copyMenuWrapper} ${styles.desktopOnly}`}>
                 <button className={styles.actionBtn} onClick={() => setShowCopyMenu(!showCopyMenu)} title="Copy conversation">
                   <ClipboardCopy size={16} />
                 </button>
@@ -427,23 +429,61 @@ const ChatArea: React.FC<ChatAreaProps> = ({ onOpenSettings }) => {
                   </div>
                 )}
               </div>
-              <button className={styles.actionBtn} onClick={() => setShowBranchPanel(true)} title="Branches">
+              <button className={`${styles.actionBtn} ${styles.desktopOnly}`} onClick={() => setShowBranchPanel(true)} title="Branches">
                 <GitBranch size={16} />
               </button>
-              <button className={styles.actionBtn} onClick={() => setShowSharedLink(true)} title="Share">
+              <button className={`${styles.actionBtn} ${styles.desktopOnly}`} onClick={() => setShowSharedLink(true)} title="Share">
                 <Link size={16} />
               </button>
-              <button className={styles.actionBtn} onClick={() => setShowUsageStats(true)} title="Usage Stats">
+              <button className={`${styles.actionBtn} ${styles.desktopOnly}`} onClick={() => setShowUsageStats(true)} title="Usage Stats">
                 <BarChart3 size={16} />
               </button>
+
+              {/* Mobile Actions Menu */}
+              <div className={`${styles.mobileMenuWrapper} ${styles.mobileOnly}`}>
+                <button 
+                  className={`${styles.actionBtn} ${showMobileMenu ? styles.active : ''}`} 
+                  onClick={() => setShowMobileMenu(!showMobileMenu)} 
+                  title="More actions"
+                >
+                  <MoreVertical size={16} />
+                </button>
+                {showMobileMenu && (
+                  <div className={styles.mobileDropdown}>
+                    <button onClick={() => { handleCopyMarkdown(); setShowMobileMenu(false); }}>
+                      <ClipboardCopy size={14} /> Copy as MD
+                    </button>
+                    <button onClick={() => { setShowSearchBar(!showSearchBar); setShowMobileMenu(false); }}>
+                      <Search size={14} /> Search
+                    </button>
+                    <button onClick={() => { setShowTagSelector(true); setShowMobileMenu(false); }}>
+                      <Tag size={14} /> Tags
+                    </button>
+                    <button onClick={() => { setShowBranchPanel(true); setShowMobileMenu(false); }}>
+                      <GitBranch size={14} /> Branches
+                    </button>
+                    <button onClick={() => { setShowSharedLink(true); setShowMobileMenu(false); }}>
+                      <Link size={14} /> Share
+                    </button>
+                    <button onClick={() => { setShowUsageStats(true); setShowMobileMenu(false); }}>
+                      <BarChart3 size={14} /> Stats
+                    </button>
+                  </div>
+                )}
+              </div>
             </>
           )}
           {/* Quick theme toggle */}
-          <button className={styles.actionBtn} onClick={toggleTheme} title={`Switch to ${resolvedTheme === 'dark' ? 'light' : 'dark'} mode`}>
+          <button className={`${styles.actionBtn} ${styles.desktopOnly}`} onClick={toggleTheme} title={`Switch to ${resolvedTheme === 'dark' ? 'light' : 'dark'} mode`}>
             {resolvedTheme === 'dark' ? <Sun size={16} /> : <Moon size={16} />}
           </button>
+          
           <select className={styles.modelSelect} value={selectedModel} onChange={(e) => setSelectedModel(e.target.value)}>
-            {MODELS.map(m => (<option key={m.id} value={m.id}>{m.display}</option>))}
+            {MODELS.map(m => (
+              <option key={m.id} value={m.id}>
+                {m.display}
+              </option>
+            ))}
           </select>
           <button className={styles.settingsBtn} onClick={onOpenSettings} title="Settings">
             <Settings size={18} />

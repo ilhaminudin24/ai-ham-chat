@@ -273,7 +273,10 @@
 /* Mobile responsive adjustments */
 @media (max-width: 768px) {
   .inputContainer {
-    padding: 12px 16px 20px;
+    padding-top: 12px;
+    padding-left: 16px;
+    padding-right: 16px;
+    padding-bottom: max(20px, env(safe-area-inset-bottom));
   }
   
   .inputBox {
