@@ -63,7 +63,7 @@ Buat 3 saran pertanyaan lanjutan dalam Bahasa Indonesia (maks 8 kata masing-masi
     
     const suggestions = lines.slice(0, 3).map((text: string, index: number) => ({
       id: `suggestion-${Date.now()}-${index}`,
-      text: text.trim().slice(0, 60), // Limit to 60 chars
+      text: text.replace(/^[\d\.\-\*\s]+/, '').trim().slice(0, 60), // Limit to 60 chars
       type: 'ai-generated' as const
     }));
 

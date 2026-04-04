@@ -531,6 +531,21 @@ const ChatArea: React.FC<ChatAreaProps> = ({ onOpenSettings }) => {
                 )}
               </div>
             )}
+            
+            {/* Follow-up Suggestions */}
+            {followUpSuggestions.length > 0 && showFollowUpSuggestions && !isStreaming && (
+              <SuggestionChips
+                suggestions={followUpSuggestions as any}
+                isOpen={true}
+                translateMode={translateMode}
+                onSuggestionClick={(text) => {
+                  clearFollowUpSuggestions();
+                  setInputText(text);
+                }}
+                onTranslateToggle={toggleTranslateMode}
+                onClose={clearFollowUpSuggestions}
+              />
+            )}
           </div>
         )}
       </div>
@@ -545,20 +560,6 @@ const ChatArea: React.FC<ChatAreaProps> = ({ onOpenSettings }) => {
         onShowTemplates={() => setShowTemplates(true)}
         onShowToast={showToastMsg}
       />
-
-      {/* Follow-up Suggestions */}
-      {followUpSuggestions.length > 0 && showFollowUpSuggestions && (
-        <SuggestionChips
-          suggestions={followUpSuggestions as any}
-          isOpen={true}
-          translateMode={translateMode}
-          onSuggestionClick={(text) => {
-            clearFollowUpSuggestions();
-            setInputText(text);
-          }}
-          onTranslateToggle={toggleTranslateMode}
-        />
-      )}
 
       {/* Toast */}
       <Toast message={toastMsg} isVisible={showToast} onDismiss={() => setShowToast(false)} />
