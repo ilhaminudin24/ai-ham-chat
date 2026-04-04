@@ -8,11 +8,24 @@ import { formatConversationAsMarkdown, copyToClipboard } from '../utils/clipboar
 import styles from './ChatInput.module.css';
 
 const MODELS = [
+  // MiniMax
   { id: 'minimax/MiniMax-M2.7', display: 'MiniMax M2.7' },
   { id: 'minimax/MiniMax-M2.5', display: 'MiniMax M2.5' },
+  
+  // Google Gemini
   { id: 'google-gemini-cli/gemini-3-flash-preview', display: 'Gemini 3 Flash' },
   { id: 'google-gemini-cli/gemini-2.5-flash', display: 'Gemini 2.5 Flash' },
   { id: 'google-gemini-cli/gemini-3.1-pro-preview', display: 'Gemini 3.1 Pro' },
+  
+  // GitHub Copilot
+  { id: 'github-copilot/gpt-5-mini', display: 'GPT-5 Mini' },
+  { id: 'github-copilot/gpt-4.1', display: 'GPT-4.1' },
+  { id: 'github-copilot/claude-haiku-4.5', display: 'Claude Haiku 4.5' },
+  { id: 'github-copilot/claude-opus-4.6', display: 'Claude Opus 4.6' },
+  { id: 'github-copilot/claude-sonnet-4.6', display: 'Claude Sonnet 4.6' },
+  { id: 'github-copilot/gpt-5.4', display: 'GPT-5.4' },
+  { id: 'github-copilot/gpt-5.3-codex', display: 'GPT-5.3 Codex' },
+  { id: 'github-copilot/grok-code-fast-1', display: 'Grok Code Fast' },
 ];
 
 const MAX_FILE_SIZE = 10 * 1024 * 1024; // 10MB

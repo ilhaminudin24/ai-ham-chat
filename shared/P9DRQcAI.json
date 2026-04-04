@@ -1,0 +1,19 @@
+{
+  "id": "P9DRQcAI",
+  "title": "halo",
+  "messages": [
+    {
+      "role": "user",
+      "content": "halo",
+      "image": null,
+      "timestamp": "2026-04-02T15:04:48.166Z"
+    },
+    {
+      "role": "assistant",
+      "content": "",
+      "timestamp": "2026-04-02T15:23:42.466Z"
+    }
+  ],
+  "sharedBy": "AI-HAM User",
+  "createdAt": "2026-04-02T15:24:06.916Z"
+}

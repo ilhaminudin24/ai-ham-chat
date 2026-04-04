@@ -177,10 +177,6 @@ export interface ChatState {
 }
 
 const defaultFolders: Folder[] = [
-  { id: 'today', name: 'Today', icon: '📅', order: 0 },
-  { id: 'work', name: 'Work', icon: '💼', order: 1 },
-  { id: 'personal', name: 'Personal', icon: '🏠', order: 2 },
-  { id: 'archived', name: 'Archived', icon: '📦', order: 3 },
 ];
 
 const defaultSettings: Settings = {

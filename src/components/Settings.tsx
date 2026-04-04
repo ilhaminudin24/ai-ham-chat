@@ -8,11 +8,22 @@ interface SettingsProps {
 }
 
 const MODELS = [
-  { id: 'minimax/MiniMax-M2.7', name: 'MiniMax M2.7' },
-  { id: 'minimax/MiniMax-M2.5', name: 'MiniMax M2.5' },
-  { id: 'google-gemini-cli/gemini-3-flash-preview', name: 'Gemini 3 Flash' },
-  { id: 'google-gemini-cli/gemini-2.5-flash', name: 'Gemini 2.5 Flash' },
-  { id: 'google-gemini-cli/gemini-3.1-pro-preview', name: 'Gemini 3.1 Pro' },
+// MiniMax
+  { id: 'minimax/MiniMax-M2.7', display: 'MiniMax M2.7' },
+  { id: 'minimax/MiniMax-M2.5', display: 'MiniMax M2.5' },
+  // Google Gemini
+  { id: 'google-gemini-cli/gemini-3-flash-preview', display: 'Gemini 3 Flash' },
+  { id: 'google-gemini-cli/gemini-2.5-flash', display: 'Gemini 2.5 Flash' },
+  { id: 'google-gemini-cli/gemini-3.1-pro-preview', display: 'Gemini 3.1 Pro' },
+  // GitHub Copilot
+  { id: 'github-copilot/gpt-5-mini', display: 'GPT-5 Mini' },
+  { id: 'github-copilot/gpt-4.1', display: 'GPT-4.1' },
+  { id: 'github-copilot/claude-haiku-4.5', display: 'Claude Haiku 4.5' },
+  { id: 'github-copilot/claude-opus-4.6', display: 'Claude Opus 4.6' },
+  { id: 'github-copilot/claude-sonnet-4.6', display: 'Claude Sonnet 4.6' },
+  { id: 'github-copilot/gpt-5.4', display: 'GPT-5.4' },
+  { id: 'github-copilot/gpt-5.3-codex', display: 'GPT-5.3 Codex' },
+  { id: 'github-copilot/grok-code-fast-1', display: 'Grok Code Fast' },
 ];
 
 const THEME_OPTIONS: { value: 'dark' | 'light' | 'system'; label: string; icon: React.ReactNode }[] = [
@@ -93,7 +104,7 @@ const Settings: React.FC<SettingsProps> = ({ onClose }) => {
                 >
                   <div className={styles.modelInfo}>
                     <Bot size={18} />
-                    <span>{model.name}</span>
+                    <span>{model.display}</span>
                   </div>
                   {settings.defaultModel === model.id && (
                     <Check size={18} className={styles.checkIcon} />
