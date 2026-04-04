@@ -1,6 +1,7 @@
 import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
 import type { Skill } from '../types/skills';
+import { useMemoryStore } from './memoryStore';
 
 export type OutputMode = 'auto' | 'json' | 'table' | 'code';
 
@@ -56,6 +57,8 @@ export interface Settings {
   defaultModel: string;
   theme: 'dark' | 'light' | 'system';
   enableFollowUpSuggestions: boolean;
+  enableMemory: boolean;
+  enableMemorySuggestions: boolean;
 }
 
 export interface UsageStats {
@@ -114,6 +117,8 @@ export interface ChatState {
   toggleSound: () => void;
   setDefaultModel: (model: string) => void;
   clearAllConversations: () => void;
+  setMemoryEnabled: (enabled: boolean) => void;
+  setMemorySuggestionsEnabled: (enabled: boolean) => void;
   
   // Folder actions
   createFolder: (name: string, icon?: string) => void;
@@ -183,7 +188,9 @@ const defaultSettings: Settings = {
   soundEnabled: true,
   defaultModel: 'minimax/MiniMax-M2.7',
   theme: 'dark',
-  enableFollowUpSuggestions: true // Default ON
+  enableFollowUpSuggestions: true, // Default ON
+  enableMemory: true,
+  enableMemorySuggestions: true,
 };
 
 const defaultUsageStats: UsageStats = {
@@ -300,6 +307,13 @@ export const useChatStore = create<ChatState>()(
             }
             return conv;
           });
+          if (
+            messageWithTimestamp.role === 'user' &&
+            state.settings.enableMemory &&
+            state.settings.enableMemorySuggestions
+          ) {
+            useMemoryStore.getState().captureSuggestionsFromText(conversationId, messageWithTimestamp.content);
+          }
           return { conversations: updatedConvs };
         });
       },
@@ -399,6 +413,18 @@ export const useChatStore = create<ChatState>()(
         set({
           conversations: [],
           currentConversationId: null
+        });
+      },
+
+      setMemoryEnabled: (enabled) => {
+        set({
+          settings: { ...get().settings, enableMemory: enabled }
+        });
+      },
+
+      setMemorySuggestionsEnabled: (enabled) => {
+        set({
+          settings: { ...get().settings, enableMemorySuggestions: enabled }
         });
       },
 

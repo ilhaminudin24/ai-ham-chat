@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
-import { X, Volume2, VolumeX, Bot, Trash2, Check, Sun, Moon, Monitor } from 'lucide-react';
+import { X, Volume2, VolumeX, Bot, Trash2, Check, Sun, Moon, Monitor, Brain } from 'lucide-react';
 import { useChatStore } from '../store/chatStore';
+import { MemoryManager } from './MemoryManager';
 import styles from './Settings.module.css';
 
 interface SettingsProps {
@@ -33,7 +34,15 @@ const THEME_OPTIONS: { value: 'dark' | 'light' | 'system'; label: string; icon: 
 ];
 
 const Settings: React.FC<SettingsProps> = ({ onClose }) => {
-  const { settings, setSoundEnabled, setDefaultModel, clearAllConversations, setTheme } = useChatStore();
+  const {
+    settings,
+    setSoundEnabled,
+    setDefaultModel,
+    clearAllConversations,
+    setTheme,
+    setMemoryEnabled,
+    setMemorySuggestionsEnabled,
+  } = useChatStore();
   const [showClearConfirm, setShowClearConfirm] = useState(false);
 
   const handleClearHistory = () => {
@@ -89,6 +98,53 @@ const Settings: React.FC<SettingsProps> = ({ onClose }) => {
               >
                 <div className={styles.toggleKnob} />
               </button>
+            </div>
+          </div>
+
+          <div className={styles.section}>
+            <div className={styles.sectionTitle}>Memory</div>
+
+            <div className={styles.settingsStack}>
+              <div className={styles.settingItem}>
+                <div className={styles.settingInfo}>
+                  <div className={styles.settingIcon}>
+                    <Brain size={20} />
+                  </div>
+                  <div>
+                    <div className={styles.settingLabel}>Persistent Memory</div>
+                    <div className={styles.settingDesc}>Let AI-HAM remember trusted context across all conversations.</div>
+                  </div>
+                </div>
+                <button
+                  className={`${styles.toggle} ${settings.enableMemory ? styles.on : ''}`}
+                  onClick={() => setMemoryEnabled(!settings.enableMemory)}
+                >
+                  <div className={styles.toggleKnob} />
+                </button>
+              </div>
+
+              <div className={styles.settingItem}>
+                <div className={styles.settingInfo}>
+                  <div className={styles.settingIcon}>
+                    <Check size={20} />
+                  </div>
+                  <div>
+                    <div className={styles.settingLabel}>Suggested Memory Review</div>
+                    <div className={styles.settingDesc}>Capture candidate memories from chat, but require review before they become trusted.</div>
+                  </div>
+                </div>
+                <button
+                  className={`${styles.toggle} ${settings.enableMemorySuggestions ? styles.on : ''}`}
+                  onClick={() => setMemorySuggestionsEnabled(!settings.enableMemorySuggestions)}
+                  disabled={!settings.enableMemory}
+                >
+                  <div className={styles.toggleKnob} />
+                </button>
+              </div>
+            </div>
+
+            <div className={styles.memoryPanelWrapper}>
+              <MemoryManager />
             </div>
           </div>
 

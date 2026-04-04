@@ -1,6 +1,8 @@
 import { useChatStore, type Message, type FileAttachment } from '../store/chatStore';
+import { useMemoryStore } from '../store/memoryStore';
 import { generateSkillsSystemPrompt } from './skillApi';
 import { extractTextFromPdf } from './pdf';
+import { formatMemoriesForPrompt } from './memory';
 import { generateTitle } from './title';
 import { generateSuggestions } from './suggestions';
 
@@ -37,10 +39,19 @@ export const sendChatRequest = async (
     
     // Determine active output mode
     const outputMode = currentConv?.outputMode || store.globalOutputMode || 'auto';
+    const memoryQuery = messages
+      .slice(-6)
+      .map(message => message.content)
+      .join('\n');
+    const relevantMemories = store.settings.enableMemory
+      ? useMemoryStore.getState().getRelevantMemories(memoryQuery, 6)
+      : [];
+    const memoryPrompt = formatMemoriesForPrompt(relevantMemories);
     
     let fullSystemPrompt = BASE_SYSTEM_PROMPT;
     if (convSystemPrompt) fullSystemPrompt += `\n\n${convSystemPrompt}`;
     if (skillsPrompt) fullSystemPrompt += `\n\n${skillsPrompt}`;
+    if (memoryPrompt) fullSystemPrompt += `\n\n${memoryPrompt}`;
     
     // Inject output mode instructions
     if (outputMode === 'json') {
@@ -115,6 +126,10 @@ export const sendChatRequest = async (
       { role: 'system', content: fullSystemPrompt },
       ...processedMessages
     ];
+
+    if (relevantMemories.length > 0) {
+      useMemoryStore.getState().markMemoriesUsed(relevantMemories.map(memory => memory.id));
+    }
 
     store.setStreamingPhase('thinking');
 
