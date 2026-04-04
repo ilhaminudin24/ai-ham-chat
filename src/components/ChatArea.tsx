@@ -12,7 +12,7 @@ import { UsageStatsPanel } from './UsageStatsPanel';
 import { Toast } from './Toast';
 import { SearchBar } from './SearchBar';
 import { TagSelector } from './TagSelector';
-import { SuggestionChips } from './SuggestionChips';
+import { SuggestionChips, type Suggestion } from './SuggestionChips';
 import { ChainProgressView } from './ChainProgressView';
 import { sendChatRequest } from '../utils/api';
 import { formatConversationAsMarkdown, formatConversationAsPlainText, copyToClipboard } from '../utils/clipboard';
@@ -63,7 +63,7 @@ const playNotificationSound = () => {
     gainNode.gain.exponentialRampToValueAtTime(0.01, audioContext.currentTime + 0.3);
     oscillator.start(audioContext.currentTime);
     oscillator.stop(audioContext.currentTime + 0.3);
-  } catch (e) {
+  } catch {
     console.log('Could not play notification sound');
   }
 };
@@ -134,7 +134,7 @@ const ChatArea: React.FC<ChatAreaProps> = ({ onOpenSettings }) => {
   const prevStreamingRef = useRef(isStreaming);
   
   const currentConversation = conversations.find(c => c.id === currentConversationId);
-  const messages = currentConversation?.messages || [];
+  const messages = useMemo(() => currentConversation?.messages || [], [currentConversation]);
   const activeBranch = currentConversation?.branches?.find(b => b.id === currentConversation.activeBranchId);
 
   // Recent conversations for welcome screen
@@ -187,6 +187,7 @@ const ChatArea: React.FC<ChatAreaProps> = ({ onOpenSettings }) => {
   // Elapsed timer for thinking phase
   useEffect(() => {
     if (streamingPhase === 'thinking' || streamingPhase === 'connecting') {
+      // eslint-disable-next-line react-hooks/set-state-in-effect -- reset timer counter on phase change
       setThinkingElapsed(0);
       thinkingTimerRef.current = setInterval(() => {
         setThinkingElapsed(prev => prev + 1);
@@ -218,6 +219,19 @@ const ChatArea: React.FC<ChatAreaProps> = ({ onOpenSettings }) => {
     prevStreamingRef.current = isStreaming;
   }, [isStreaming, settings.soundEnabled]);
 
+  const handleRegenerate = useCallback(async (overrideModelId?: string) => {
+    if (!currentConversationId || isStreaming) return;
+    regenerateLastResponse(currentConversationId);
+    setRegenCount(prev => prev + 1);
+    const modelToUse = overrideModelId || selectedModel;
+    setTimeout(async () => {
+      const updatedConv = useChatStore.getState().conversations.find(c => c.id === currentConversationId);
+      if (updatedConv && updatedConv.messages.length > 0) {
+        await sendChatRequest(currentConversationId, updatedConv.messages, modelToUse);
+      }
+    }, 0);
+  }, [currentConversationId, isStreaming, regenerateLastResponse, selectedModel]);
+
   // Ctrl+Shift+R and Ctrl+F keyboard shortcuts
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
@@ -246,9 +260,10 @@ const ChatArea: React.FC<ChatAreaProps> = ({ onOpenSettings }) => {
 
     document.addEventListener('keydown', handleKeyDown);
     return () => document.removeEventListener('keydown', handleKeyDown);
-  }, [isStreaming, currentConversationId, lastAIIndex]);
+  }, [isStreaming, currentConversationId, lastAIIndex, handleRegenerate]);
 
   // Reset regen count when conversation changes
+  // eslint-disable-next-line react-hooks/set-state-in-effect -- reset derived state on conversation switch
   useEffect(() => { setRegenCount(1); }, [currentConversationId]);
 
   const handleRename = (newName: string) => {
@@ -282,7 +297,7 @@ const ChatArea: React.FC<ChatAreaProps> = ({ onOpenSettings }) => {
     const success = await copyToClipboard(text);
     if (success) showToastMsg('Copied as Markdown!');
     setShowCopyMenu(false);
-  }, [currentConversation]);
+  }, [currentConversation, showToastMsg]);
 
   const handleCopyPlainText = useCallback(async () => {
     if (!currentConversation) return;
@@ -290,20 +305,7 @@ const ChatArea: React.FC<ChatAreaProps> = ({ onOpenSettings }) => {
     const success = await copyToClipboard(text);
     if (success) showToastMsg('Copied as Plain Text!');
     setShowCopyMenu(false);
-  }, [currentConversation]);
-
-  const handleRegenerate = useCallback(async (overrideModelId?: string) => {
-    if (!currentConversationId || isStreaming) return;
-    regenerateLastResponse(currentConversationId);
-    setRegenCount(prev => prev + 1);
-    const modelToUse = overrideModelId || selectedModel;
-    setTimeout(async () => {
-      const updatedConv = useChatStore.getState().conversations.find(c => c.id === currentConversationId);
-      if (updatedConv && updatedConv.messages.length > 0) {
-        await sendChatRequest(currentConversationId, updatedConv.messages, modelToUse);
-      }
-    }, 0);
-  }, [currentConversationId, isStreaming, regenerateLastResponse, selectedModel]);
+  }, [currentConversation, showToastMsg]);
 
   // Handle starter click
   const handleStarterClick = (prompt: string) => {
@@ -332,7 +334,7 @@ const ChatArea: React.FC<ChatAreaProps> = ({ onOpenSettings }) => {
   }, [currentConversationId, isStreaming, selectedModel, clearFollowUpSuggestions, setInputText]);
 
   // Search highlight callback
-  const handleSearchHighlight = useCallback((matchIndices: { msgIndex: number; matches: number[] }[], _currentMatch: number) => {
+  const handleSearchHighlight = useCallback((matchIndices: { msgIndex: number; matches: number[] }[]) => {
     setSearchHighlights(matchIndices);
   }, []);
 
@@ -363,7 +365,7 @@ const ChatArea: React.FC<ChatAreaProps> = ({ onOpenSettings }) => {
     <main className={styles.mainContent} ref={swipeRef} style={swipePeekStyle}>
       <header className={styles.chatHeader}>
         <div className={styles.headerLeft}>
-          <button className={styles.menuBtn} onClick={() => setSidebarOpen(true)}>
+          <button className={styles.menuBtn} onClick={() => setSidebarOpen(true)} aria-label="Open sidebar">
             <Menu size={20} />
           </button>
           <span className={styles.headerTitle}>
@@ -413,16 +415,16 @@ const ChatArea: React.FC<ChatAreaProps> = ({ onOpenSettings }) => {
           {currentConversation && messages.length > 0 && (
             <>
               {/* Desktop Actions */}
-              <button className={`${styles.actionBtn} ${styles.desktopOnly}`} onClick={() => setShowSearchBar(!showSearchBar)} title="Search (Ctrl+F)">
-                <Search size={16} />
-              </button>
-              <button className={`${styles.actionBtn} ${styles.desktopOnly}`} onClick={() => setShowTagSelector(true)} title="Tags (Ctrl+T)">
-                <Tag size={16} />
-              </button>
-              <div className={`${styles.copyMenuWrapper} ${styles.desktopOnly}`}>
-                <button className={styles.actionBtn} onClick={() => setShowCopyMenu(!showCopyMenu)} title="Copy conversation">
-                  <ClipboardCopy size={16} />
-                </button>
+               <button className={`${styles.actionBtn} ${styles.desktopOnly}`} onClick={() => setShowSearchBar(!showSearchBar)} title="Search (Ctrl+F)" aria-label="Search in conversation">
+                 <Search size={16} />
+               </button>
+               <button className={`${styles.actionBtn} ${styles.desktopOnly}`} onClick={() => setShowTagSelector(true)} title="Tags (Ctrl+T)" aria-label="Manage conversation tags">
+                 <Tag size={16} />
+               </button>
+               <div className={`${styles.copyMenuWrapper} ${styles.desktopOnly}`}>
+                 <button className={styles.actionBtn} onClick={() => setShowCopyMenu(!showCopyMenu)} title="Copy conversation" aria-label="Copy conversation">
+                   <ClipboardCopy size={16} />
+                 </button>
                 {showCopyMenu && (
                   <div className={styles.copyDropdown}>
                     <button onClick={handleCopyMarkdown}>📝 Copy as Markdown</button>
@@ -430,25 +432,26 @@ const ChatArea: React.FC<ChatAreaProps> = ({ onOpenSettings }) => {
                   </div>
                 )}
               </div>
-              <button className={`${styles.actionBtn} ${styles.desktopOnly}`} onClick={() => setShowBranchPanel(true)} title="Branches">
-                <GitBranch size={16} />
-              </button>
-              <button className={`${styles.actionBtn} ${styles.desktopOnly}`} onClick={() => setShowSharedLink(true)} title="Share">
-                <Link size={16} />
-              </button>
-              <button className={`${styles.actionBtn} ${styles.desktopOnly}`} onClick={() => setShowUsageStats(true)} title="Usage Stats">
-                <BarChart3 size={16} />
-              </button>
+               <button className={`${styles.actionBtn} ${styles.desktopOnly}`} onClick={() => setShowBranchPanel(true)} title="Branches" aria-label="Open branch manager">
+                 <GitBranch size={16} />
+               </button>
+               <button className={`${styles.actionBtn} ${styles.desktopOnly}`} onClick={() => setShowSharedLink(true)} title="Share" aria-label="Share conversation">
+                 <Link size={16} />
+               </button>
+               <button className={`${styles.actionBtn} ${styles.desktopOnly}`} onClick={() => setShowUsageStats(true)} title="Usage Stats" aria-label="Open usage stats">
+                 <BarChart3 size={16} />
+               </button>
 
               {/* Mobile Actions Menu */}
               <div className={`${styles.mobileMenuWrapper} ${styles.mobileOnly}`}>
-                <button 
-                  className={`${styles.actionBtn} ${showMobileMenu ? styles.active : ''}`} 
-                  onClick={() => setShowMobileMenu(!showMobileMenu)} 
-                  title="More actions"
-                >
-                  <MoreVertical size={16} />
-                </button>
+                  <button 
+                    className={`${styles.actionBtn} ${showMobileMenu ? styles.active : ''}`} 
+                    onClick={() => setShowMobileMenu(!showMobileMenu)} 
+                    title="More actions"
+                    aria-label="Open more actions"
+                  >
+                    <MoreVertical size={16} />
+                  </button>
                 {showMobileMenu && (
                   <div className={styles.mobileDropdown}>
                     <button onClick={() => { handleCopyMarkdown(); setShowMobileMenu(false); }}>
@@ -475,21 +478,21 @@ const ChatArea: React.FC<ChatAreaProps> = ({ onOpenSettings }) => {
             </>
           )}
           {/* Quick theme toggle */}
-          <button className={`${styles.actionBtn} ${styles.desktopOnly}`} onClick={toggleTheme} title={`Switch to ${resolvedTheme === 'dark' ? 'light' : 'dark'} mode`}>
-            {resolvedTheme === 'dark' ? <Sun size={16} /> : <Moon size={16} />}
-          </button>
-          
-          <select className={styles.modelSelect} value={selectedModel} onChange={(e) => setSelectedModel(e.target.value)}>
-            {MODELS.map(m => (
-              <option key={m.id} value={m.id}>
-                {m.display}
-              </option>
-            ))}
-          </select>
-          <button className={styles.settingsBtn} onClick={onOpenSettings} title="Settings">
-            <Settings size={18} />
-          </button>
-        </div>
+           <button className={`${styles.actionBtn} ${styles.desktopOnly}`} onClick={toggleTheme} title={`Switch to ${resolvedTheme === 'dark' ? 'light' : 'dark'} mode`} aria-label={`Switch to ${resolvedTheme === 'dark' ? 'light' : 'dark'} mode`}>
+             {resolvedTheme === 'dark' ? <Sun size={16} /> : <Moon size={16} />}
+           </button>
+           
+           <select className={styles.modelSelect} value={selectedModel} onChange={(e) => setSelectedModel(e.target.value)} aria-label="Select model">
+             {MODELS.map(m => (
+               <option key={m.id} value={m.id}>
+                 {m.display}
+               </option>
+             ))}
+           </select>
+           <button className={styles.settingsBtn} onClick={onOpenSettings} title="Settings" aria-label="Open settings">
+             <Settings size={18} />
+           </button>
+         </div>
       </header>
 
       {/* In-conversation Search Bar */}
@@ -597,7 +600,7 @@ const ChatArea: React.FC<ChatAreaProps> = ({ onOpenSettings }) => {
             {/* Follow-up Suggestions */}
             {followUpSuggestions.length > 0 && showFollowUpSuggestions && !isStreaming && (
               <SuggestionChips
-                suggestions={followUpSuggestions as any}
+                suggestions={followUpSuggestions as Suggestion[]}
                 isOpen={true}
                 translateMode={translateMode}
                 onSuggestionClick={handleSuggestionSubmit}

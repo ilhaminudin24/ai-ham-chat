@@ -16,14 +16,14 @@ export const initSupabaseSync = async (userId: string) => {
     .order('created_at', { ascending: false });
 
   if (!error && data && data.length > 0) {
-    const cloudConvs: Conversation[] = data.map((row: any) => ({
-      id: row.id.toString(),
-      title: row.title,
-      messages: row.messages || [],
-      mainThreadMessages: row.messages || [],
+    const cloudConvs: Conversation[] = data.map((row: Record<string, unknown>) => ({
+      id: String(row.id),
+      title: row.title as string,
+      messages: (row.messages as Conversation['messages']) || [],
+      mainThreadMessages: (row.messages as Conversation['messages']) || [],
       branches: [], 
       activeBranchId: null,
-      createdAt: row.created_at,
+      createdAt: row.created_at as string,
       folderId: null,
       isPinned: false,
       tags: []

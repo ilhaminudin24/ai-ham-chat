@@ -32,7 +32,7 @@ Respons AI: "${responsePreview}"
 
 Buat 3 saran pertanyaan lanjutan dalam Bahasa Indonesia (maks 8 kata masing-masing). Pisahkan dengan baris baru.`;
 
-    const API_TOKEN = (window as any).API_TOKEN || import.meta.env.VITE_API_TOKEN || '';
+    const API_TOKEN = window.API_TOKEN || import.meta.env.VITE_API_TOKEN || '';
     
     const response = await fetch('/v1/chat/completions', {
       method: 'POST',
@@ -63,7 +63,7 @@ Buat 3 saran pertanyaan lanjutan dalam Bahasa Indonesia (maks 8 kata masing-masi
     
     const suggestions = lines.slice(0, 3).map((text: string, index: number) => ({
       id: `suggestion-${Date.now()}-${index}`,
-      text: text.replace(/^[\d\.\-\*\s]+/, '').trim().slice(0, 60), // Limit to 60 chars
+      text: text.replace(/^[\d.\-*\s]+/, '').trim().slice(0, 60), // Limit to 60 chars
       type: 'ai-generated' as const
     }));
 

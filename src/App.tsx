@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react';
+import type { Session } from '@supabase/supabase-js';
 import Sidebar from './components/Sidebar';
 import ChatArea from './components/ChatArea';
 import Settings from './components/Settings';
@@ -16,7 +17,7 @@ function App() {
   const [showQuickSwitcher, setShowQuickSwitcher] = useState(false);
   const [showShortcuts, setShowShortcuts] = useState(false);
   const [shareId, setShareId] = useState<string | null>(null);
-  const [session, setSession] = useState<any>(null);
+  const [session, setSession] = useState<Session | null>(null);
   const [isInitializing, setIsInitializing] = useState(true);
   
   const { createNewConversation, conversations, currentConversationId, setCurrentConversation } = useChatStore();
@@ -51,6 +52,7 @@ function App() {
     const path = window.location.pathname;
     const shareMatch = path.match(/^\/share\/([a-zA-Z0-9_-]+)$/);
     if (shareMatch) {
+      // eslint-disable-next-line react-hooks/set-state-in-effect -- one-time route parse on mount
       setShareId(shareMatch[1]);
     } else {
       setShareId(null);
@@ -121,7 +123,7 @@ function App() {
   }
 
   if (isInitializing) {
-    return <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', height: '100vh', background: 'var(--bg-primary)'}}>Loading...</div>;
+    return <div className="app-loading-screen">Preparing your workspace...</div>;
   }
 
   if (!session) {
@@ -129,7 +131,7 @@ function App() {
   }
 
   return (
-    <div className="app-container" style={{ position: 'relative' }}>
+    <div className="app-container">
       <Sidebar />
       <ChatArea onOpenSettings={() => setShowSettings(true)} />
       {showSettings && <Settings onClose={() => setShowSettings(false)} />}

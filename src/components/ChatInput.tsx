@@ -351,40 +351,43 @@ const ChatInput: React.FC<ChatInputProps> = ({ onShowTemplates, onShowToast }) =
                   </span>
                   <span className={styles.filePreviewSize}>{formatFileSize(file.size)}</span>
                 </div>
-                <button className={styles.fileRemoveBtn} onClick={() => removeFile(file.id)}>
-                  <X size={12} />
+                <button className={styles.fileRemoveBtn} onClick={() => removeFile(file.id)} aria-label={`Remove ${file.name}`}>
+                   <X size={12} />
                 </button>
               </div>
             ))}
             {files.length < MAX_FILES && (
-              <button 
-                className={styles.addMoreBtn} 
-                onClick={() => fileInputRef.current?.click()}
-                title="Add more files"
-              >
-                +
-              </button>
+               <button 
+                 className={styles.addMoreBtn} 
+                 onClick={() => fileInputRef.current?.click()}
+                 title="Add more files"
+                 aria-label="Add more files"
+               >
+                 +
+               </button>
             )}
           </div>
         )}
 
         <div className={styles.inputBox}>
           <div className={styles.toolsWrapper}>
-             <button 
-               className={`${styles.toolBtn} ${files.length > 0 ? styles.active : ''}`}
-               onClick={() => fileInputRef.current?.click()}
-               title="Attach files (images, documents)"
-               disabled={isStreaming}
-             >
-               <Paperclip size={20} />
-             </button>
+              <button 
+                className={`${styles.toolBtn} ${files.length > 0 ? styles.active : ''}`}
+                onClick={() => fileInputRef.current?.click()}
+                title="Attach files (images, documents)"
+                disabled={isStreaming}
+                aria-label="Attach files"
+              >
+                <Paperclip size={20} />
+              </button>
              <div className={styles.modeDropdownWrapper}>
-               <button 
-                 className={`${styles.toolBtn} ${activeOutputMode !== 'auto' ? styles.activeMode : ''}`}
-                 onClick={() => setShowOutputDir(!showOutputDir)}
-                 title="Set Output Mode"
-                 disabled={isStreaming}
-               >
+                <button 
+                  className={`${styles.toolBtn} ${activeOutputMode !== 'auto' ? styles.activeMode : ''}`}
+                  onClick={() => setShowOutputDir(!showOutputDir)}
+                  title="Set Output Mode"
+                  disabled={isStreaming}
+                  aria-label="Set output mode"
+                >
                  {activeOutputMode === 'auto' && <Wand2 size={18} />}
                  {activeOutputMode === 'json' && <Braces size={18} />}
                  {activeOutputMode === 'table' && <LayoutGrid size={18} />}
@@ -410,32 +413,35 @@ const ChatInput: React.FC<ChatInputProps> = ({ onShowTemplates, onShowToast }) =
              />
           </div>
           
-          <textarea
-            ref={textareaRef}
-            className={styles.textarea}
+           <textarea
+              ref={textareaRef}
+              className={styles.textarea}
             placeholder={isStreaming ? "AI-HAM is responding..." : "Message AI-HAM... (type / for commands)"}
             value={text}
             onChange={(e) => handleTextChange(e.target.value)}
             onKeyDown={handleKeyDown}
             onPaste={handlePaste}
-            disabled={isStreaming}
-            rows={1}
-          />
+             disabled={isStreaming}
+             rows={1}
+             aria-label="Message input"
+           />
           
           {isStreaming ? (
-            <button 
-              className={`${styles.sendBtn} ${styles.stopBtn}`}
-              onClick={stopStreaming}
-              title="Stop generating (Esc)"
-            >
-              <Square size={16} />
-            </button>
-          ) : (
-            <button 
-              className={styles.sendBtn} 
-              disabled={!hasContent}
-              onClick={handleSend}
-            >
+             <button 
+               className={`${styles.sendBtn} ${styles.stopBtn}`}
+               onClick={stopStreaming}
+               title="Stop generating (Esc)"
+               aria-label="Stop generating"
+             >
+               <Square size={16} />
+             </button>
+           ) : (
+             <button 
+               className={styles.sendBtn} 
+               disabled={!hasContent}
+               onClick={handleSend}
+               aria-label="Send message"
+             >
               <Send size={18} />
             </button>
           )}

@@ -35,7 +35,6 @@ export const ChainsPanel: React.FC<ChainsPanelProps> = ({ isOpen, onClose, onEdi
     // Determine active conversation or create new
     let targetConvId = currentConversationId;
     if (!targetConvId || useChatStore.getState().conversations.find(c => c.id === targetConvId)?.messages.length !== 0) {
-      const usedId = Date.now().toString(); // Date.now().toString();
       // create new conversation without switching automatically here if we use the store action directly 
       // but easiest is to call createNewConversation
       useChatStore.getState().createNewConversation();

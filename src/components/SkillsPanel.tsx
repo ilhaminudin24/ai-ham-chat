@@ -27,10 +27,6 @@ export const SkillsPanel: React.FC<SkillsPanelProps> = ({ isOpen, onClose, onSki
   const [copiedId, setCopiedId] = useState<string | null>(null);
   const [detailSkill, setDetailSkill] = useState<Skill | null>(null);
 
-  useEffect(() => {
-    if (isOpen) loadSkills();
-  }, [isOpen]);
-
   const loadSkills = async () => {
     setLoading(true);
     setError(null);
@@ -44,6 +40,12 @@ export const SkillsPanel: React.FC<SkillsPanelProps> = ({ isOpen, onClose, onSki
       setLoading(false);
     }
   };
+
+  useEffect(() => {
+    if (isOpen) loadSkills();
+  // loadSkills is defined above and stable (no external deps that change)
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [isOpen]);
 
   const handleToggle = async (skill: Skill) => {
     if (!skill.enabled && skills.filter(s => s.enabled).length >= 3) {

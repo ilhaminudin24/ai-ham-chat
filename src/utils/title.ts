@@ -79,7 +79,7 @@ WRONG EXAMPLES:
     const englishUserPrompt = `Question: "${userQuestion}"
 Write a short title (4-5 words) in English that describes the main topic.`;
     
-    const API_TOKEN = (window as any).API_TOKEN || import.meta.env.VITE_API_TOKEN || '';
+    const API_TOKEN = window.API_TOKEN || import.meta.env.VITE_API_TOKEN || '';
     console.log('[AutoTitle] Generating with question:', userQuestion, 'lang:', lang);
     
     const response = await fetch('/v1/chat/completions', {

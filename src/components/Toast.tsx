@@ -25,7 +25,7 @@ export const Toast: React.FC<ToastProps> = ({
   }, [isVisible, onDismiss, duration]);
 
   return (
-    <div className={`${styles.toast} ${isVisible ? styles.visible : ''}`}>
+    <div className={`${styles.toast} ${isVisible ? styles.visible : ''}`} role="status" aria-live="polite">
       <span className={styles.icon}>{icon || <Check size={16} />}</span>
       <span>{message}</span>
     </div>

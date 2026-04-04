@@ -35,6 +35,16 @@ export const QuickSwitcher: React.FC<QuickSwitcherProps> = ({ isOpen, onClose })
     return folder ? `${folder.icon} ${folder.name}` : 'All Chats';
   };
 
+  const handleSelect = (id: string) => {
+    setCurrentConversation(id);
+    onClose();
+  };
+
+  const handleNewChat = () => {
+    createNewConversation();
+    onClose();
+  };
+
   // Handle keyboard navigation
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
@@ -66,6 +76,7 @@ export const QuickSwitcher: React.FC<QuickSwitcherProps> = ({ isOpen, onClose })
 
     document.addEventListener('keydown', handleKeyDown);
     return () => document.removeEventListener('keydown', handleKeyDown);
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [isOpen, selectedIndex, sortedConversations]);
 
   // Focus input when opened
@@ -82,22 +93,12 @@ export const QuickSwitcher: React.FC<QuickSwitcherProps> = ({ isOpen, onClose })
     setSelectedIndex(0);
   }, [query]);
 
-  const handleSelect = (id: string) => {
-    setCurrentConversation(id);
-    onClose();
-  };
-
-  const handleNewChat = () => {
-    createNewConversation();
-    onClose();
-  };
-
   if (!isOpen) return null;
 
   return (
     <>
       <div className={styles.overlay} onClick={onClose} />
-      <div className={styles.modal}>
+      <div className={styles.modal} role="dialog" aria-modal="true" aria-label="Quick switcher">
         <div className={styles.searchBox}>
           <Search size={18} className={styles.searchIcon} />
           <input
@@ -132,7 +133,7 @@ export const QuickSwitcher: React.FC<QuickSwitcherProps> = ({ isOpen, onClose })
                   <div className={styles.resultMeta}>
                     {getFolderName(conv.folderId)} • {conv.messages.length} messages
                     {conv.tags && conv.tags.length > 0 && (
-                      <span style={{ marginLeft: '6px', display: 'inline-flex', gap: '3px' }}>
+                      <span className={styles.resultTags}>
                         {conv.tags.map(tag => <TagChip key={tag} tag={tag} small />)}
                       </span>
                     )}

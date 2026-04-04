@@ -5,7 +5,7 @@ import { generateTitle } from './title';
 import { generateSuggestions } from './suggestions';
 
 // Accessing injected config from server or Vite env fallback
-const API_TOKEN = (window as any).API_TOKEN || import.meta.env.VITE_API_TOKEN || '';
+const API_TOKEN = window.API_TOKEN || import.meta.env.VITE_API_TOKEN || '';
 const API_BASE = '/v1';
 
 // Base system prompt
@@ -65,23 +65,27 @@ export const sendChatRequest = async (
         }
 
         // Build content: text + images + document attachments
-        const contentParts: any[] = [];
+        type TextPart = { type: 'text'; text: string };
+        type ImagePart = { type: 'image_url'; image_url: { url: string } };
+        type ContentPart = TextPart | ImagePart;
+        const contentParts: ContentPart[] = [];
         const textContent = m.content || '';
 
         // Handle images: use array content format with image_url parts
         if (images.length > 0) {
+          const textPart: TextPart = { type: 'text', text: textContent || '[Image]' };
           contentParts.push(
-            { type: 'text', text: textContent || '[Image]' },
-            ...images.map(url => ({ type: 'image_url', image_url: { url } }))
+            textPart,
+            ...images.map(url => ({ type: 'image_url' as const, image_url: { url } }))
           );
           // Extract text from PDF documents and append
           for (const doc of docFiles) {
             const ext = doc.name.split('.').pop()?.toUpperCase() || 'FILE';
             if (ext === 'PDF') {
               const pdfText = await extractTextFromPdf(doc.dataUrl);
-              contentParts[0].text += `\n\n[PDF Content from ${doc.name}]:\n${pdfText}`;
+              textPart.text += `\n\n[PDF Content from ${doc.name}]:\n${pdfText}`;
             } else {
-              contentParts[0].text += `\n\n[Attached file: ${doc.name} (${ext}) — base64 encoded]\n\`\`\`\n${doc.dataUrl}\n\`\`\``;
+              textPart.text += `\n\n[Attached file: ${doc.name} (${ext}) — base64 encoded]\n\`\`\`\n${doc.dataUrl}\n\`\`\``;
             }
           }
           return { role: m.role, content: contentParts };
@@ -171,13 +175,14 @@ export const sendChatRequest = async (
         }
       }
     }
-  } catch (error: any) {
-    if (error.name === 'AbortError') {
+  } catch (error) {
+    if ((error as { name?: string }).name === 'AbortError') {
       // User cancelled streaming — don't show error
       return;
     }
+    const errMsg = error instanceof Error ? error.message : 'Unknown error occurred.';
     console.error('Streaming request failed:', error);
-    store.updateLastMessage(conversationId, `\n\n**Error:** ${error.message || 'Unknown error occurred.'}`);
+    store.updateLastMessage(conversationId, `\n\n**Error:** ${errMsg}`);
   } finally {
     store.setStreaming(false);
     store.setStreamingPhase(null);

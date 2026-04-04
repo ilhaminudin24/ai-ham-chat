@@ -56,7 +56,11 @@ const hasTable = (content: string): boolean => {
   return /\|(.+)\|\n\|[-:\s|]+\|\n((?:\|.+\|\n?)+)/.test(content);
 };
 
-const CodeBlock = ({ node, inline, className, children, ...props }: any) => {
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+const vscDarkPlusStyle = vscDarkPlus as any;
+
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+const CodeBlock = ({ inline, className, children, ...props }: any) => {
   const match = /language-(\w+)/.exec(className || '');
   const [copied, setCopied] = useState(false);
   const codeString = String(children).replace(/\n$/, '');
@@ -86,14 +90,14 @@ const CodeBlock = ({ node, inline, className, children, ...props }: any) => {
             {isValidJson === true && <span className={styles.jsonValidBadge}>✅ Valid JSON</span>}
             {isValidJson === false && <span className={styles.jsonInvalidBadge} title="Syntax error: invalid JSON format">❌ Invalid JSON</span>}
           </div>
-          <button onClick={handleCopy} className={styles.copyBtn}>
+          <button onClick={handleCopy} className={styles.copyBtn} aria-label={`Copy ${match[1]} code block`}>
             {copied ? <Check size={14} /> : <Copy size={14} />}
             {copied ? 'Copied!' : (match[1] === 'json' ? 'Copy as JSON' : 'Copy')}
           </button>
         </div>
         <SyntaxHighlighter
           {...props}
-          style={vscDarkPlus as any}
+          style={vscDarkPlusStyle}
           language={match[1]}
           PreTag="div"
           customStyle={{ margin: 0, borderRadius: '0 0 12px 12px' }}
@@ -167,24 +171,24 @@ export const MessageBubble: React.FC<Props> = ({ message, messageIndex = 0, onEd
             {!isUser && (
               <>
                 {containsTable && (
-                  <button onClick={handleCopyTable} className={styles.copyTableBtn} title="Copy table for Excel/Outlook">
+                  <button onClick={handleCopyTable} className={styles.copyTableBtn} title="Copy table for Excel/Outlook" aria-label="Copy table as tabular data">
                     {tableCopied ? <Check size={14} /> : <Table size={14} />}
                     {tableCopied ? 'Table Copied!' : 'Copy as Table'}
                   </button>
                 )}
-                <button onClick={handleCopyText} className={styles.copyTextBtn} title="Copy for email">
+                 <button onClick={handleCopyText} className={styles.copyTextBtn} title="Copy for email" aria-label="Copy message text">
                   {copied ? <Check size={14} /> : <Copy size={14} />}
                   {copied ? 'Copied!' : 'Copy'}
                 </button>
               </>
             )}
             {isUser && onEdit && (
-              <button onClick={onEdit} className={styles.editBtn} title="Edit message">
+               <button onClick={onEdit} className={styles.editBtn} title="Edit message" aria-label="Edit message">
                 ✏️
               </button>
             )}
             {isUser && onBranch && (
-              <button onClick={() => onBranch(messageIndex)} className={styles.branchBtn} title="Branch from this message">
+               <button onClick={() => onBranch(messageIndex)} className={styles.branchBtn} title="Branch from this message" aria-label="Create branch from this message">
                 🌿
               </button>
             )}
@@ -245,19 +249,21 @@ export const MessageBubble: React.FC<Props> = ({ message, messageIndex = 0, onEd
               </span>
             )}
             <div className={styles.regenerateGroup}>
-              <button 
-                onClick={() => onRegenerate()} 
-                className={styles.regenerateBtn}
-                title="Regenerate with current model"
-              >
+                <button 
+                  onClick={() => onRegenerate()} 
+                  className={styles.regenerateBtn}
+                  title="Regenerate with current model"
+                  aria-label="Regenerate with current model"
+                >
                 <RefreshCw size={14} />
                 Regenerate
               </button>
-              <button 
-                className={styles.regenerateModelBtn}
-                onClick={() => setShowModelMenu(!showModelMenu)}
-                title="Regenerate with different model"
-              >
+                <button 
+                  className={styles.regenerateModelBtn}
+                  onClick={() => setShowModelMenu(!showModelMenu)}
+                  title="Regenerate with different model"
+                  aria-label="Choose model for regeneration"
+                >
                 <ChevronDown size={14} />
               </button>
               {showModelMenu && (

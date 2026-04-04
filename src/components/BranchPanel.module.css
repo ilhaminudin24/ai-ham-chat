@@ -4,8 +4,9 @@
   left: 0;
   right: 0;
   bottom: 0;
-  background: rgba(0, 0, 0, 0.6);
+  background: var(--bg-overlay);
   z-index: 200;
+  backdrop-filter: blur(10px);
 }
 
 .panel {
@@ -16,13 +17,15 @@
   width: 400px;
   max-width: 90vw;
   max-height: 70vh;
-  background: var(--bg-sidebar);
+  background: var(--bg-modal);
   border: 1px solid var(--border-light);
-  border-radius: 16px;
+  border-radius: 24px;
   z-index: 201;
   overflow: hidden;
   display: flex;
   flex-direction: column;
+  box-shadow: var(--shadow-dropdown);
+  backdrop-filter: blur(18px);
 }
 
 .header {
@@ -89,9 +92,9 @@
   align-items: center;
   gap: 12px;
   padding: 12px 14px;
-  background: var(--bg-input);
+  background: var(--bg-elevated);
   border: 1px solid var(--border-light);
-  border-radius: 10px;
+  border-radius: 14px;
   margin-bottom: 8px;
   cursor: pointer;
   transition: all 0.15s;
@@ -103,7 +106,7 @@
 
 .branchItem.active {
   border-color: var(--accent-brand);
-  background: rgba(194, 149, 91, 0.1);
+  background: var(--accent-soft);
 }
 
 .currentStatus {
@@ -111,7 +114,7 @@
   align-items: center;
   gap: 8px;
   padding: 10px 14px;
-  background: rgba(16, 185, 129, 0.1);
+  background: var(--success-soft);
   border: 1px solid rgba(16, 185, 129, 0.3);
   border-radius: 10px;
   margin-bottom: 14px;
@@ -215,9 +218,9 @@
 
 .newBranchForm {
   padding: 14px;
-  background: var(--bg-input);
+  background: var(--bg-elevated);
   border: 1px solid var(--accent-brand);
-  border-radius: 10px;
+  border-radius: 14px;
 }
 
 .formLabel {

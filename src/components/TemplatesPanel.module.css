@@ -4,8 +4,9 @@
   left: 0;
   right: 0;
   bottom: 0;
-  background: rgba(0, 0, 0, 0.6);
+  background: var(--bg-overlay);
   z-index: 100;
+  backdrop-filter: blur(10px);
 }
 
 .panel {
@@ -15,12 +16,14 @@
   width: 420px;
   max-width: 90vw;
   height: 100vh;
-  background: var(--bg-sidebar);
+  background: var(--bg-modal);
   border-left: 1px solid var(--border-light);
   z-index: 101;
   display: flex;
   flex-direction: column;
   animation: slideIn 0.2s ease-out;
+  box-shadow: var(--shadow-dropdown);
+  backdrop-filter: blur(18px);
 }
 
 @keyframes slideIn {
@@ -63,7 +66,7 @@
   display: flex;
   align-items: center;
   gap: 10px;
-  padding: 12px 20px;
+  padding: 14px 20px;
   border-bottom: 1px solid var(--border-light);
 }
 
@@ -146,16 +149,16 @@
   gap: 12px;
   padding: 12px;
   margin: 4px 0;
-  background: var(--bg-input);
+  background: var(--bg-elevated);
   border: 1px solid var(--border-light);
-  border-radius: 10px;
+  border-radius: 14px;
   cursor: pointer;
   transition: all 0.15s;
 }
 
 .templateCard:hover {
   border-color: var(--accent-brand);
-  background: rgba(194, 149, 91, 0.08);
+  background: var(--bg-input-hover);
 }
 
 .templateIcon {

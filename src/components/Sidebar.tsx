@@ -122,7 +122,7 @@ const Sidebar: React.FC = () => {
       />
       <aside className={`${styles.sidebarContainer} ${isSidebarOpen ? styles.open : ''}`}>
         <div className={styles.sidebarHeader}>
-          <div style={{ display: 'flex', width: '100%', gap: '8px' }}>
+          <div className={styles.headerActionsRow}>
             <button className={styles.newChatBtn} onClick={() => { createNewConversation(); setSidebarOpen(false); }}>
               <MessageSquarePlus size={18} />
               <span>New Chat</span>
@@ -155,13 +155,14 @@ const Sidebar: React.FC = () => {
 
         {/* Tag filter bar */}
         {filterTag && (
-          <div style={{ padding: '0 16px 8px', display: 'flex', gap: '6px', alignItems: 'center' }}>
-            <span style={{ fontSize: '0.7rem', color: 'var(--text-muted)' }}>Filter:</span>
+          <div className={styles.filterBar}>
+            <span className={styles.filterLabel}>Filter:</span>
             <TagChip tag={filterTag} />
             <button
               onClick={() => setFilterTag(null)}
-              style={{ background: 'transparent', border: 'none', color: 'var(--text-muted)', cursor: 'pointer', padding: '2px', display: 'flex' }}
+              className={styles.filterClearBtn}
               title="Clear filter"
+              aria-label="Clear active tag filter"
             >
               <X size={12} />
             </button>
@@ -354,10 +355,10 @@ const Sidebar: React.FC = () => {
                       >
                         {conv.isPinned && <Pin size={12} className={styles.pinIcon} />}
                         <MessageSquare size={14} />
-                        <div style={{ flex: 1, minWidth: 0 }}>
+                        <div className={styles.chatMeta}>
                           <span className={styles.chatTitle}>{conv.title || 'New Chat'}</span>
                           {conv.tags && conv.tags.length > 0 && (
-                            <div style={{ display: 'flex', gap: '3px', marginTop: '2px', flexWrap: 'wrap' }}>
+                            <div className={styles.chatTags}>
                               {conv.tags.map(tag => (
                                 <span key={tag} onClick={(e) => { e.stopPropagation(); setFilterTag(tag); }}>
                                   <TagChip tag={tag} small />
@@ -445,31 +446,21 @@ const Sidebar: React.FC = () => {
           )}
         </div>
 
-        <div className={styles.sidebarFooter} style={{ display: 'flex', alignItems: 'center', padding: '16px', borderTop: '1px solid var(--border-sidebar)', gap: '10px' }}>
-          <div style={{ 
-            background: 'var(--accent-brand, #C2955B)', color: '#fff', 
-            width: '32px', height: '32px', borderRadius: '50%', flexShrink: 0,
-            display: 'flex', alignItems: 'center', justifyContent: 'center', 
-            fontSize: '14px', fontWeight: 'bold' 
-          }}>
+        <div className={styles.sidebarFooter}>
+          <div className={styles.profileAvatar}>
             {userEmail ? userEmail.substring(0, 1).toUpperCase() : 'U'}
           </div>
-          <div style={{ flex: 1, minWidth: 0 }}>
-            <div style={{ fontWeight: 500, fontSize: '0.85rem', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis', color: 'var(--text-primary)' }}>
-               {userEmail || 'Boss Ilham'}
-            </div>
-            <div style={{ color: 'var(--tag-green, #22c55e)', fontSize: '0.75rem', fontWeight: 500 }}>
-               Online
-            </div>
+          <div className={styles.profileMeta}>
+            <div className={styles.profileName}>{userEmail || 'Boss Ilham'}</div>
+            <div className={styles.profileStatus}>Online</div>
           </div>
-          
+
+          <div className={styles.footerActions}>
           <button 
             className={styles.skillsBtn}
             onClick={() => setShowChains(true)}
             title="Prompt Chains"
-            style={{ background: 'transparent', border: 'none', color: 'var(--text-secondary)', cursor: 'pointer', padding: '6px', borderRadius: '6px', marginLeft: 'auto' }}
-            onMouseEnter={(e) => e.currentTarget.style.color = 'var(--text-primary)'}
-            onMouseLeave={(e) => e.currentTarget.style.color = 'var(--text-secondary)'}
+            aria-label="Open prompt chains"
           >
             <Workflow size={18} />
           </button>
@@ -478,22 +469,20 @@ const Sidebar: React.FC = () => {
             className={styles.skillsBtn}
             onClick={() => setShowSkills(true)}
             title="Settings & Skills"
-            style={{ background: 'transparent', border: 'none', color: 'var(--text-secondary)', cursor: 'pointer', padding: '6px', borderRadius: '6px', marginLeft: '0' }}
-            onMouseEnter={(e) => e.currentTarget.style.color = 'var(--text-primary)'}
-            onMouseLeave={(e) => e.currentTarget.style.color = 'var(--text-secondary)'}
+            aria-label="Open skills panel"
           >
             <Settings size={18} />
           </button>
           
           <button 
+            className={styles.skillsBtn}
             onClick={() => supabase.auth.signOut()}
             title="Log out"
-            style={{ background: 'transparent', border: 'none', color: 'var(--text-secondary)', cursor: 'pointer', padding: '6px', borderRadius: '6px' }}
-            onMouseEnter={(e) => e.currentTarget.style.color = 'var(--tag-red, #ef4444)'}
-            onMouseLeave={(e) => e.currentTarget.style.color = 'var(--text-secondary)'}
+            aria-label="Log out"
           >
             <LogOut size={18} />
           </button>
+          </div>
         </div>
       </aside>
       

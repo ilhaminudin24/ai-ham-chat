@@ -4,7 +4,7 @@
   left: 0;
   right: 0;
   bottom: 0;
-  background: rgba(0, 0, 0, 0.6);
+  background: var(--bg-overlay);
   display: flex;
   align-items: center;
   justify-content: center;
@@ -15,14 +15,15 @@
 .modal {
   background: var(--bg-modal);
   border: 1px solid var(--border-sidebar);
-  border-radius: var(--radius-lg);
+  border-radius: 24px;
   width: 90%;
   max-width: 420px;
   max-height: 85vh;
   overflow: hidden;
   display: flex;
   flex-direction: column;
-  box-shadow: var(--shadow-lg);
+  box-shadow: var(--shadow-dropdown);
+  backdrop-filter: blur(18px);
 }
 
 .header {
@@ -84,7 +85,7 @@
 .themeSelector {
   display: flex;
   gap: 6px;
-  background: var(--bg-input);
+  background: var(--bg-elevated);
   border-radius: var(--radius-sm);
   padding: 4px;
 }
@@ -131,7 +132,7 @@
 .settingIcon {
   width: 36px;
   height: 36px;
-  background: var(--bg-input);
+  background: var(--bg-elevated);
   border-radius: var(--radius-sm);
   display: flex;
   align-items: center;
@@ -194,7 +195,7 @@
   align-items: center;
   justify-content: space-between;
   padding: 12px 14px;
-  background: transparent;
+  background: var(--bg-elevated);
   border: 1px solid var(--border-sidebar);
   border-radius: var(--radius-sm);
   cursor: pointer;

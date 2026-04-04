@@ -14,6 +14,7 @@ export const EditMessageModal: React.FC<EditMessageModalProps> = ({ isOpen, orig
 
   useEffect(() => {
     if (isOpen) {
+      // eslint-disable-next-line react-hooks/set-state-in-effect
       setContent(originalContent);
     }
   }, [isOpen, originalContent]);

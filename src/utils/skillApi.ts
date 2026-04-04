@@ -152,7 +152,7 @@ export const generateSkillsSystemPrompt = (skills: Skill[]): string => {
     const { rules, keywords } = parseSkillContent(skill.content);
     
     // Substitute parameters into rules
-    let processedRules = rules.map(r => {
+    const processedRules = rules.map(r => {
       let processed = r;
       if (skill.parameters) {
         skill.parameters.forEach(param => {

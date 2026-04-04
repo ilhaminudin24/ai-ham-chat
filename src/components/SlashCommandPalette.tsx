@@ -42,6 +42,7 @@ export const SlashCommandPalette: React.FC<SlashCommandPaletteProps> = ({ isOpen
 
   // Reset selection on query change
   useEffect(() => {
+    // eslint-disable-next-line react-hooks/set-state-in-effect
     setSelectedIndex(0);
   }, [query]);
 

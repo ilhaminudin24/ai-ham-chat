@@ -20,6 +20,7 @@ export const ChainEditor: React.FC<ChainEditorProps> = ({ isOpen, chain, onClose
 
   useEffect(() => {
     if (chain) {
+      // eslint-disable-next-line react-hooks/set-state-in-effect -- sync form state from props
       setName(chain.name);
       setDescription(chain.description);
       setIcon(chain.icon || '🔗');

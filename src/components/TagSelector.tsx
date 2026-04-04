@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import { X, Plus, Tag } from 'lucide-react';
 import styles from './TagSelector.module.css';
 
-export const PRESET_TAGS = [
+const PRESET_TAGS = [
   { name: 'Urgent', color: '#ef4444', emoji: '🔴' },
   { name: 'Done', color: '#22c55e', emoji: '🟢' },
   { name: 'Research', color: '#3b82f6', emoji: '🔵' },

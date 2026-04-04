@@ -29,8 +29,9 @@ export const Auth: React.FC = () => {
         });
         if (error) throw error;
       }
-    } catch (error: any) {
-      setErrorMsg(error.message || 'Terjadi kesalahan saat otentikasi. Silakan coba lagi.');
+    } catch (error) {
+      const msg = error instanceof Error ? error.message : 'Terjadi kesalahan saat otentikasi. Silakan coba lagi.';
+      setErrorMsg(msg);
     } finally {
       setLoading(false);
     }
@@ -83,7 +84,7 @@ export const Auth: React.FC = () => {
 
           {errorMsg && (
             <div className={styles.errorMsg}>
-              <AlertCircle size={18} style={{ flexShrink: 0, marginTop: '2px' }} />
+              <AlertCircle size={18} className={styles.errorIcon} />
               <span>{errorMsg}</span>
             </div>
           )}

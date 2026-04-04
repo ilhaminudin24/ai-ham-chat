@@ -2,10 +2,11 @@
   display: flex;
   align-items: center;
   gap: 8px;
-  padding: 8px 16px;
-  background: var(--bg-sidebar);
+  padding: 10px 16px;
+  background: rgba(12, 20, 35, 0.9);
   border-bottom: 1px solid var(--border-light);
   animation: slideDown 0.2s ease;
+  backdrop-filter: blur(14px);
 }
 
 @keyframes slideDown {
@@ -22,8 +23,8 @@
   flex: 1;
   background: var(--bg-input);
   border: 1px solid var(--border-light);
-  border-radius: var(--radius-sm);
-  padding: 6px 12px;
+  border-radius: 12px;
+  padding: 10px 12px;
   color: var(--text-primary);
   font-size: 0.875rem;
   outline: none;
@@ -31,7 +32,7 @@
 }
 
 .input:focus {
-  border-color: var(--accent);
+  border-color: var(--accent-brand);
 }
 
 .input::placeholder {
@@ -52,12 +53,12 @@
 }
 
 .navBtns button {
-  background: transparent;
-  border: none;
+  background: var(--bg-input);
+  border: 1px solid var(--border-light);
   color: var(--text-secondary);
   cursor: pointer;
-  padding: 4px;
-  border-radius: var(--radius-sm);
+  padding: 6px;
+  border-radius: 10px;
   display: flex;
   align-items: center;
   transition: all var(--transition-fast);
@@ -74,12 +75,12 @@
 }
 
 .closeBtn {
-  background: transparent;
-  border: none;
+  background: var(--bg-input);
+  border: 1px solid var(--border-light);
   color: var(--text-muted);
   cursor: pointer;
-  padding: 4px;
-  border-radius: var(--radius-sm);
+  padding: 6px;
+  border-radius: 10px;
   display: flex;
   align-items: center;
   transition: all var(--transition-fast);

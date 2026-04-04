@@ -37,7 +37,7 @@ export const SharedChatView: React.FC<SharedChatViewProps> = ({ shareId }) => {
         }
         
         setConversation(data);
-      } catch (e) {
+      } catch {
         setError('Failed to load shared conversation');
       } finally {
         setLoading(false);

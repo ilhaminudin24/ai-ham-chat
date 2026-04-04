@@ -34,6 +34,7 @@ export const SearchBar: React.FC<SearchBarProps> = ({ isOpen, onClose, messages,
   const totalMatches = matches.length;
 
   // Notify parent about current highlights
+  // eslint-disable-next-line react-hooks/exhaustive-deps -- matches/onHighlight are stable per render
   useEffect(() => {
     if (!query.trim()) {
       onHighlight([], -1);
@@ -55,12 +56,14 @@ export const SearchBar: React.FC<SearchBarProps> = ({ isOpen, onClose, messages,
   // Focus on open
   useEffect(() => {
     if (isOpen) {
+      // eslint-disable-next-line react-hooks/set-state-in-effect -- reset search state when opening
       setQuery('');
       setCurrentMatchIdx(0);
       setTimeout(() => inputRef.current?.focus(), 50);
     } else {
       onHighlight([], -1);
     }
+  // eslint-disable-next-line react-hooks/exhaustive-deps -- onHighlight is a stable callback prop
   }, [isOpen]);
 
   const goToNext = () => {
@@ -100,14 +103,14 @@ export const SearchBar: React.FC<SearchBarProps> = ({ isOpen, onClose, messages,
         </span>
       )}
       <div className={styles.navBtns}>
-        <button onClick={goToPrev} disabled={totalMatches === 0} title="Previous (Shift+Enter)">
+        <button onClick={goToPrev} disabled={totalMatches === 0} title="Previous (Shift+Enter)" aria-label="Previous search result">
           <ChevronUp size={16} />
         </button>
-        <button onClick={goToNext} disabled={totalMatches === 0} title="Next (Enter)">
+        <button onClick={goToNext} disabled={totalMatches === 0} title="Next (Enter)" aria-label="Next search result">
           <ChevronDown size={16} />
         </button>
       </div>
-      <button className={styles.closeBtn} onClick={onClose}>
+      <button className={styles.closeBtn} onClick={onClose} aria-label="Close search">
         <X size={16} />
       </button>
     </div>
