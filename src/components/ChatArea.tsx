@@ -308,6 +308,27 @@ const ChatArea: React.FC<ChatAreaProps> = ({ onOpenSettings }) => {
     setInputText(prompt);
   };
 
+  // Handle suggestion submittal
+  const handleSuggestionSubmit = useCallback(async (text: string) => {
+    clearFollowUpSuggestions();
+    
+    if (!currentConversationId || isStreaming) return;
+    
+    const store = useChatStore.getState();
+    
+    // Add user message directly
+    store.addMessage(currentConversationId, { role: 'user' as const, content: text.trim() });
+    
+    // Clear any existing input content just in case
+    setInputText('');
+    
+    // Fire the API request
+    const currentConv = store.conversations.find(c => c.id === currentConversationId);
+    if (currentConv) {
+      await sendChatRequest(currentConversationId, currentConv.messages, selectedModel);
+    }
+  }, [currentConversationId, isStreaming, selectedModel, clearFollowUpSuggestions, setInputText]);
+
   // Search highlight callback
   const handleSearchHighlight = useCallback((matchIndices: { msgIndex: number; matches: number[] }[], _currentMatch: number) => {
     setSearchHighlights(matchIndices);
@@ -538,10 +559,7 @@ const ChatArea: React.FC<ChatAreaProps> = ({ onOpenSettings }) => {
                 suggestions={followUpSuggestions as any}
                 isOpen={true}
                 translateMode={translateMode}
-                onSuggestionClick={(text) => {
-                  clearFollowUpSuggestions();
-                  setInputText(text);
-                }}
+                onSuggestionClick={handleSuggestionSubmit}
                 onTranslateToggle={toggleTranslateMode}
                 onClose={clearFollowUpSuggestions}
               />
