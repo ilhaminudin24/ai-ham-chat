@@ -1,7 +1,8 @@
 import React, { useState, useEffect } from 'react';
-import { X, Plus, Trash2, ChevronUp, ChevronDown, Workflow, Info } from 'lucide-react';
+import { X, Plus, Trash2, ChevronUp, ChevronDown, Workflow, Info, Zap } from 'lucide-react';
 import { useChainStore } from '../store/chainStore';
 import type { PromptChain, PromptChainStep } from '../types/chains';
+import type { OutputMode } from '../store/chatStore';
 import styles from './ChainEditor.module.css';
 
 interface ChainEditorProps {
@@ -16,7 +17,9 @@ export const ChainEditor: React.FC<ChainEditorProps> = ({ isOpen, chain, onClose
   const [name, setName] = useState('');
   const [description, setDescription] = useState('');
   const [icon, setIcon] = useState('🔗');
+  const [autoAdvance, setAutoAdvance] = useState(false);
   const [steps, setSteps] = useState<PromptChainStep[]>([]);
+  const [validationErrors, setValidationErrors] = useState<string[]>([]);
 
   useEffect(() => {
     if (chain) {
@@ -24,22 +27,26 @@ export const ChainEditor: React.FC<ChainEditorProps> = ({ isOpen, chain, onClose
       setName(chain.name);
       setDescription(chain.description);
       setIcon(chain.icon || '🔗');
+      setAutoAdvance(chain.autoAdvance || false);
       setSteps(chain.steps);
     } else {
       setName('');
       setDescription('');
       setIcon('🔗');
+      setAutoAdvance(false);
       setSteps([{ id: Date.now().toString(), name: 'Initial Step', promptTemplate: '' }]);
     }
+    setValidationErrors([]);
   }, [chain, isOpen]);
 
   if (!isOpen) return null;
 
   const handleAddStep = () => {
     const newStep: PromptChainStep = {
-      id: Date.now().toString(),
+      id: `step-${Date.now()}-${Math.random().toString(36).slice(2, 6)}`,
       name: `Step ${steps.length + 1}`,
       promptTemplate: '',
+      outputMode: 'auto',
     };
     setSteps([...steps, newStep]);
   };
@@ -66,15 +73,24 @@ export const ChainEditor: React.FC<ChainEditorProps> = ({ isOpen, chain, onClose
   };
 
   const handleSave = () => {
-    if (!name.trim() || steps.some(s => !s.name.trim() || !s.promptTemplate.trim())) {
-      alert('Please fill in all required fields.');
+    const errors: string[] = [];
+    if (!name.trim()) errors.push('Chain name is required.');
+    steps.forEach((s, i) => {
+      if (!s.name.trim()) errors.push(`Step ${i + 1} needs a name.`);
+      if (!s.promptTemplate.trim()) errors.push(`Step ${i + 1} needs a prompt template.`);
+    });
+    
+    if (errors.length > 0) {
+      setValidationErrors(errors);
       return;
     }
+    setValidationErrors([]);
 
-    const chainData = {
+    const chainData: Partial<PromptChain> = {
       name: name.trim(),
       description: description.trim(),
       icon,
+      autoAdvance,
       steps,
       updatedAt: new Date().toISOString(),
     };
@@ -84,12 +100,19 @@ export const ChainEditor: React.FC<ChainEditorProps> = ({ isOpen, chain, onClose
     } else {
       addChain({
         ...chainData,
-        id: Date.now().toString(),
+        id: `chain-${Date.now()}`,
         createdAt: new Date().toISOString(),
-      });
+      } as PromptChain);
     }
     onClose();
   };
+
+  const outputModeOptions: { value: OutputMode; label: string }[] = [
+    { value: 'auto', label: 'Auto' },
+    { value: 'code', label: 'Code' },
+    { value: 'json', label: 'JSON' },
+    { value: 'table', label: 'Table' },
+  ];
 
   return (
     <div className={styles.modalOverlay} onClick={onClose}>
@@ -105,13 +128,22 @@ export const ChainEditor: React.FC<ChainEditorProps> = ({ isOpen, chain, onClose
         </div>
 
         <div className={styles.modalContent}>
+          {/* Validation Errors */}
+          {validationErrors.length > 0 && (
+            <div className={styles.validationBanner}>
+              {validationErrors.map((err, i) => (
+                <div key={i} className={styles.validationError}>• {err}</div>
+              ))}
+            </div>
+          )}
+
           <div className={styles.section}>
             <span className={styles.label}>Chain Name *</span>
             <input 
-              className={styles.inputField}
+              className={`${styles.inputField} ${validationErrors.some(e => e.includes('name')) ? styles.inputError : ''}`}
               placeholder="e.g., Code Reviewer, Article Summarizer..."
               value={name}
-              onChange={(e) => setName(e.target.value)}
+              onChange={(e) => { setName(e.target.value); setValidationErrors([]); }}
               autoFocus
             />
           </div>
@@ -122,10 +154,10 @@ export const ChainEditor: React.FC<ChainEditorProps> = ({ isOpen, chain, onClose
               <div className={styles.iconPreview}>{icon}</div>
               <input 
                 className={styles.inputField}
-                placeholder="Emoji icon (e.g., 🔍, ✍️, 📝)"
+                placeholder="Emoji"
                 value={icon}
                 onChange={(e) => setIcon(e.target.value)}
-                style={{ width: '80px', textAlign: 'center' }}
+                style={{ width: '70px', textAlign: 'center' }}
               />
               <input 
                 className={styles.inputField}
@@ -136,12 +168,33 @@ export const ChainEditor: React.FC<ChainEditorProps> = ({ isOpen, chain, onClose
             </div>
           </div>
 
+          {/* Auto-advance toggle */}
           <div className={styles.section}>
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '8px' }}>
+            <div className={styles.toggleRow}>
+              <div className={styles.toggleInfo}>
+                <Zap size={16} className={styles.toggleIcon} />
+                <div>
+                  <span className={styles.toggleLabel}>Auto-advance</span>
+                  <span className={styles.toggleDesc}>Automatically run next step after AI responds</span>
+                </div>
+              </div>
+              <button
+                className={`${styles.toggle} ${autoAdvance ? styles.toggleOn : ''}`}
+                onClick={() => setAutoAdvance(!autoAdvance)}
+                type="button"
+              >
+                <div className={styles.toggleKnob} />
+              </button>
+            </div>
+          </div>
+
+          <div className={styles.section}>
+            <div className={styles.stepsHeader}>
               <span className={styles.label}>Workflow Steps *</span>
               <div className={styles.variablesHint}>
                 <Info size={14} />
-                Use <span className={styles.variableTag}>'{"{{input}}"}'</span> in the first step for initial input.
+                Available: <span className={styles.variableTag}>{'{{input}}'}</span>
+                <span className={styles.variableTag}>{'{{previous_output}}'}</span>
               </div>
             </div>
             
@@ -149,43 +202,57 @@ export const ChainEditor: React.FC<ChainEditorProps> = ({ isOpen, chain, onClose
               {steps.map((step, index) => (
                 <div key={step.id} className={styles.stepCard}>
                   <div className={styles.stepHeader}>
-                    <div style={{ display: 'flex', alignItems: 'center', gap: '12px', flex: 1 }}>
+                    <div className={styles.stepHeaderLeft}>
                       <div className={styles.stepNumber}>{index + 1}</div>
                       <input 
-                        className={styles.inputField}
+                        className={styles.stepNameInput}
                         value={step.name}
                         onChange={(e) => handleUpdateStep(index, { name: e.target.value })}
-                        placeholder="Step Name (e.g., Analyze Code)"
-                        style={{ border: 'none', background: 'transparent', fontWeight: 600, padding: '4px' }}
+                        placeholder="Step Name"
                       />
+                      <select
+                        className={styles.outputModeSelect}
+                        value={step.outputMode || 'auto'}
+                        onChange={(e) => handleUpdateStep(index, { outputMode: e.target.value as OutputMode })}
+                        title="Output mode"
+                      >
+                        {outputModeOptions.map(opt => (
+                          <option key={opt.value} value={opt.value}>{opt.label}</option>
+                        ))}
+                      </select>
                     </div>
                     <div className={styles.stepActions}>
-                      <button className={styles.stepActionBtn} onClick={() => handleMoveStep(index, 'up')} disabled={index === 0}>
-                        <ChevronUp size={18} />
+                      <button className={styles.stepActionBtn} onClick={() => handleMoveStep(index, 'up')} disabled={index === 0} title="Move up">
+                        <ChevronUp size={16} />
                       </button>
-                      <button className={styles.stepActionBtn} onClick={() => handleMoveStep(index, 'down')} disabled={index === steps.length - 1}>
-                        <ChevronDown size={18} />
+                      <button className={styles.stepActionBtn} onClick={() => handleMoveStep(index, 'down')} disabled={index === steps.length - 1} title="Move down">
+                        <ChevronDown size={16} />
                       </button>
                       <button 
                         className={`${styles.stepActionBtn} ${styles.deleteStepBtn}`} 
                         onClick={() => handleRemoveStep(index)}
                         disabled={steps.length <= 1}
+                        title="Remove step"
                       >
-                        <Trash2 size={18} />
+                        <Trash2 size={16} />
                       </button>
                     </div>
                   </div>
                   <div className={styles.stepBody}>
                     <textarea 
                       className={styles.promptTextarea}
-                      placeholder={index === 0 ? "Enter prompt. Use '{{input}}' where you want the user's initial input to go." : "Enter prompt for this step."}
+                      placeholder={
+                        index === 0
+                          ? "Enter prompt. Use {{input}} where you want the user's initial input.\nExample: Analyze the following code:\n\n{{input}}"
+                          : "Enter prompt for this step.\nUse {{previous_output}} to reference the last step's result."
+                      }
                       value={step.promptTemplate}
                       onChange={(e) => handleUpdateStep(index, { promptTemplate: e.target.value })}
                     />
                     {index > 0 && (
-                      <div className={styles.variablesHint} style={{ marginTop: 0 }}>
-                        <Info size={12} />
-                        Contex from previous steps is automatically available.
+                      <div className={styles.templateHint}>
+                        <Info size={11} />
+                        Context from previous steps is automatically available. Use <code>{'{{previous_output}}'}</code> or <code>{'{{step_N_output}}'}</code> for specific step results.
                       </div>
                     )}
                   </div>

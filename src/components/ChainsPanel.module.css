@@ -4,7 +4,7 @@
   left: 0;
   width: 100vw;
   height: 100vh;
-  background-color: rgba(0, 0, 0, 0.5);
+  background-color: var(--bg-overlay);
   z-index: 100;
   opacity: 0;
   pointer-events: none;
@@ -21,7 +21,7 @@
   position: fixed;
   top: 0;
   right: 0;
-  width: 400px;
+  width: 420px;
   max-width: 100vw;
   height: 100vh;
   background-color: var(--bg-sidebar);
@@ -31,7 +31,7 @@
   transition: transform var(--transition-normal) cubic-bezier(0.4, 0, 0.2, 1);
   display: flex;
   flex-direction: column;
-  box-shadow: -4px 0 24px rgba(0, 0, 0, 0.2);
+  box-shadow: var(--shadow-lg);
 }
 
 .panelContainer.open {
@@ -44,7 +44,6 @@
   display: flex;
   justify-content: space-between;
   align-items: center;
-  background-color: var(--bg-sidebar);
 }
 
 .headerTitle {
@@ -74,21 +73,45 @@
   color: var(--text-primary);
 }
 
+/* Search */
+.searchContainer {
+  padding: 12px 20px 0;
+}
+
+.searchInput {
+  width: 100%;
+  padding: 8px 12px;
+  background: var(--bg-input);
+  border: 1px solid var(--border-sidebar);
+  border-radius: var(--radius-sm);
+  color: var(--text-primary);
+  font-size: 0.85rem;
+  outline: none;
+  transition: border-color var(--transition-fast);
+}
+
+.searchInput:focus {
+  border-color: var(--accent);
+}
+
+.searchInput::placeholder {
+  color: var(--text-muted);
+}
+
 .panelContent {
   flex: 1;
   overflow-y: auto;
-  padding: 20px;
+  padding: 16px 20px;
   display: flex;
   flex-direction: column;
-  gap: 16px;
+  gap: 14px;
 }
 
 .chainCard {
-  background-color: var(--bg-input);
+  background: var(--bg-elevated);
   border: 1px solid var(--border-sidebar);
   border-radius: var(--radius-md);
   padding: 16px;
-  cursor: pointer;
   transition: all var(--transition-fast);
   display: flex;
   flex-direction: column;
@@ -97,8 +120,7 @@
 
 .chainCard:hover {
   border-color: var(--accent);
-  transform: translateY(-2px);
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+  box-shadow: var(--shadow-card);
 }
 
 .chainHeader {
@@ -126,55 +148,103 @@
 
 .chainDescription {
   color: var(--text-secondary);
-  font-size: 0.85rem;
+  font-size: 0.83rem;
   line-height: 1.4;
 }
 
 .chainMeta {
   display: flex;
   align-items: center;
-  gap: 8px;
-  margin-top: 4px;
+  gap: 6px;
+  margin-top: 3px;
 }
 
 .stepBadge {
-  background-color: var(--bg-sidebar-hover);
+  background: var(--bg-muted);
   color: var(--text-secondary);
-  font-size: 0.75rem;
+  font-size: 0.7rem;
   padding: 2px 8px;
   border-radius: 12px;
   font-weight: 500;
 }
 
+.autoBadge {
+  background: var(--accent-soft);
+  color: var(--accent);
+  font-size: 0.65rem;
+  font-weight: 700;
+  padding: 2px 6px;
+  border-radius: 4px;
+  text-transform: uppercase;
+  letter-spacing: 0.4px;
+}
+
+.cardFooter {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-top: 4px;
+}
+
+.runActions {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.quickRunBtn {
+  background: var(--accent-soft);
+  color: var(--accent);
+  border: none;
+  width: 30px;
+  height: 30px;
+  border-radius: var(--radius-sm);
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all var(--transition-fast);
+}
+
+.quickRunBtn:hover {
+  background: var(--accent);
+  color: white;
+}
+
 .runBtn {
-  background-color: var(--accent);
+  background: var(--accent);
   color: white;
   border: none;
-  padding: 6px 12px;
+  padding: 6px 14px;
   border-radius: var(--radius-sm);
   font-size: 0.8rem;
-  font-weight: 500;
+  font-weight: 600;
   cursor: pointer;
   display: flex;
   align-items: center;
   gap: 6px;
-  transition: background-color var(--transition-fast);
+  transition: all var(--transition-fast);
 }
 
 .runBtn:hover {
-  background-color: var(--accent-hover);
+  background: var(--accent-hover);
+}
+
+.runBtn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
 }
 
 .cardActions {
   display: flex;
-  gap: 8px;
+  gap: 4px;
 }
 
 .cardActions button {
   background: transparent;
-  border: 1px solid var(--border-sidebar);
-  color: var(--text-secondary);
-  padding: 6px;
+  border: 1px solid transparent;
+  color: var(--text-muted);
+  padding: 5px;
   border-radius: var(--radius-sm);
   cursor: pointer;
   display: flex;
@@ -184,19 +254,37 @@
 }
 
 .cardActions button:hover {
-  background-color: var(--bg-sidebar-hover);
+  background: var(--bg-input);
   color: var(--text-primary);
-  border-color: var(--text-muted);
+  border-color: var(--border-sidebar);
+}
+
+.cardActions button:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 1px;
 }
 
 .cardActions button.deleteBtn:hover {
-  color: #ef4444;
-  border-color: #ef4444;
-  background-color: rgba(239, 68, 68, 0.1);
+  color: var(--tag-red, #ef4444);
+  border-color: var(--tag-red, #ef4444);
+  background: var(--danger-soft, rgba(239, 68, 68, 0.1));
+}
+
+.emptyState {
+  text-align: center;
+  padding: 24px;
+  color: var(--text-muted);
+  font-size: 0.85rem;
+}
+
+.bottomActions {
+  display: flex;
+  gap: 8px;
+  margin-top: 8px;
 }
 
 .createBtn {
-  width: 100%;
+  flex: 1;
   padding: 12px;
   background: transparent;
   border: 1px dashed var(--accent);
@@ -209,11 +297,31 @@
   justify-content: center;
   gap: 8px;
   transition: all var(--transition-fast);
-  margin-top: 8px;
 }
 
 .createBtn:hover {
-  background-color: rgba(144, 202, 249, 0.05); /* slightly tinted */
+  background: var(--accent-soft);
+}
+
+.importBtn {
+  padding: 12px 16px;
+  background: transparent;
+  border: 1px solid var(--border-sidebar);
+  border-radius: var(--radius-md);
+  color: var(--text-secondary);
+  font-weight: 500;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 0.85rem;
+  transition: all var(--transition-fast);
+}
+
+.importBtn:hover {
+  background: var(--bg-input);
+  color: var(--text-primary);
+  border-color: var(--text-muted);
 }
 
 /* Modal for Initial Input */
@@ -223,51 +331,58 @@
   left: 0;
   right: 0;
   bottom: 0;
-  background-color: rgba(0, 0, 0, 0.6);
+  background: var(--bg-overlay);
   z-index: 200;
   display: flex;
   align-items: center;
   justify-content: center;
-  backdrop-filter: blur(2px);
+  backdrop-filter: blur(4px);
 }
 
 .inputModal {
-  background-color: var(--bg-panel);
+  background: var(--bg-modal);
   border: 1px solid var(--border-sidebar);
   border-radius: var(--radius-lg);
   width: 90%;
   max-width: 500px;
   padding: 24px;
-  box-shadow: var(--shadow-xl);
+  box-shadow: var(--shadow-lg);
 }
 
 .inputModal h3 {
   margin: 0 0 8px 0;
   color: var(--text-primary);
+  font-size: 1.05rem;
 }
 
 .inputModal p {
   color: var(--text-secondary);
-  font-size: 0.9rem;
+  font-size: 0.85rem;
   margin: 0 0 16px 0;
 }
 
 .inputModal textarea {
   width: 100%;
   min-height: 120px;
-  background-color: var(--bg-input);
+  background: var(--bg-input);
   border: 1px solid var(--border-sidebar);
   border-radius: var(--radius-md);
   padding: 12px;
   color: var(--text-primary);
   font-family: inherit;
+  font-size: 0.9rem;
   resize: vertical;
   margin-bottom: 16px;
+  outline: none;
+  transition: border-color var(--transition-fast);
 }
 
 .inputModal textarea:focus {
-  outline: none;
   border-color: var(--accent);
+}
+
+.inputModal textarea::placeholder {
+  color: var(--text-muted);
 }
 
 .inputModalActions {
@@ -276,16 +391,53 @@
   gap: 12px;
 }
 
-.cancelBtn {
+.cancelModalBtn {
   background: transparent;
   border: 1px solid var(--border-sidebar);
   color: var(--text-secondary);
   padding: 8px 16px;
   border-radius: var(--radius-sm);
   cursor: pointer;
+  font-size: 0.85rem;
+  transition: all var(--transition-fast);
 }
 
-.cancelBtn:hover {
-  background-color: var(--bg-input);
+.cancelModalBtn:hover {
+  background: var(--bg-input);
   color: var(--text-primary);
+}
+
+.startBtn {
+  background: var(--accent);
+  color: white;
+  border: none;
+  padding: 8px 18px;
+  border-radius: var(--radius-sm);
+  font-size: 0.85rem;
+  font-weight: 600;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  transition: all var(--transition-fast);
+}
+
+.startBtn:hover {
+  background: var(--accent-hover);
+}
+
+.startBtn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+/* Responsive */
+@media (max-width: 480px) {
+  .panelContainer {
+    width: 100vw;
+  }
+
+  .panelContent {
+    padding: 12px 14px;
+  }
 }

@@ -10,10 +10,12 @@ export interface ChainStoreState {
   addChain: (chain: PromptChain) => void;
   updateChain: (id: string, updates: Partial<PromptChain>) => void;
   deleteChain: (id: string) => void;
+  duplicateChain: (id: string) => void;
   
   startExecution: (conversationId: string, chainId: string, initialInput?: string) => void;
   updateExecution: (conversationId: string, updates: Partial<ChainExecutionState>) => void;
-  advanceExecutionStep: (conversationId: string) => void;
+  advanceExecutionStep: (conversationId: string, lastAssistantMessage?: string) => void;
+  failExecution: (conversationId: string, error: string) => void;
   cancelExecution: (conversationId: string) => void;
   
   getActiveExecution: (conversationId: string) => ChainExecutionState | undefined;
@@ -25,6 +27,7 @@ const defaultChains: PromptChain[] = [
     name: 'Code Review Workflow',
     description: 'Analyze code for bugs, suggest fixes, and write unit tests.',
     icon: '🔍',
+    autoAdvance: false,
     steps: [
       {
         id: 'step-1',
@@ -67,11 +70,30 @@ export const useChainStore = create<ChainStoreState>()(
       })),
       
       deleteChain: (id) => set((state) => ({
-        chains: state.chains.filter((chain) => chain.id !== id)
+        chains: state.chains.filter((chain) => chain.id !== id),
+        // Clean up orphaned executions
+        activeExecutions: state.activeExecutions.filter((ex) => ex.chainId !== id)
       })),
+
+      duplicateChain: (id) => set((state) => {
+        const original = state.chains.find(c => c.id === id);
+        if (!original) return state;
+        const now = new Date().toISOString();
+        const copy: PromptChain = {
+          ...original,
+          id: `chain-${Date.now()}`,
+          name: `${original.name} (Copy)`,
+          steps: original.steps.map(s => ({ ...s, id: `step-${Date.now()}-${Math.random().toString(36).slice(2, 6)}` })),
+          createdAt: now,
+          updatedAt: now,
+        };
+        return { chains: [...state.chains, copy] };
+      }),
       
       startExecution: (conversationId, chainId, initialInput) => set((state) => {
-        // Remove any existing execution for this conversation to cleanly start over
+        // Validate chain exists
+        if (!state.chains.find(c => c.id === chainId)) return state;
+        
         const cleanExecutions = state.activeExecutions.filter(ex => ex.conversationId !== conversationId);
         return {
           activeExecutions: [
@@ -80,8 +102,9 @@ export const useChainStore = create<ChainStoreState>()(
               conversationId,
               chainId,
               currentStepIndex: 0,
-              status: 'pending_run',
-              initialInput
+              status: 'pending_run' as const,
+              initialInput,
+              stepResults: [],
             }
           ]
         };
@@ -93,23 +116,31 @@ export const useChainStore = create<ChainStoreState>()(
         )
       })),
       
-      advanceExecutionStep: (conversationId) => set((state) => {
+      advanceExecutionStep: (conversationId, lastAssistantMessage) => set((state) => {
         return {
           activeExecutions: state.activeExecutions.map((ex) => {
             if (ex.conversationId === conversationId) {
               const chain = state.chains.find(c => c.id === ex.chainId);
               if (!chain) return ex;
               
+              // Store the step result
+              const newStepResults = [...ex.stepResults];
+              if (lastAssistantMessage) {
+                newStepResults[ex.currentStepIndex] = lastAssistantMessage;
+              }
+              
               if (ex.currentStepIndex + 1 < chain.steps.length) {
                 return {
                   ...ex,
                   currentStepIndex: ex.currentStepIndex + 1,
-                  status: 'pending_run' 
+                  status: 'pending_run' as const,
+                  stepResults: newStepResults,
                 };
               } else {
                 return {
                   ...ex,
-                  status: 'completed'
+                  status: 'completed' as const,
+                  stepResults: newStepResults,
                 };
               }
             }
@@ -117,6 +148,14 @@ export const useChainStore = create<ChainStoreState>()(
           })
         };
       }),
+
+      failExecution: (conversationId, error) => set((state) => ({
+        activeExecutions: state.activeExecutions.map(ex =>
+          ex.conversationId === conversationId
+            ? { ...ex, status: 'failed' as const, error }
+            : ex
+        )
+      })),
       
       cancelExecution: (conversationId) => set((state) => ({
         activeExecutions: state.activeExecutions.filter((ex) => ex.conversationId !== conversationId)
@@ -130,7 +169,6 @@ export const useChainStore = create<ChainStoreState>()(
       name: 'aiham_chains_v1',
       partialize: (state) => ({
         chains: state.chains,
-        // We only persist active executions so that closing the app doesn't lose the chain progress
         activeExecutions: state.activeExecutions.filter(e => e.status !== 'completed')
       })
     }

@@ -34,7 +34,6 @@ export const SearchBar: React.FC<SearchBarProps> = ({ isOpen, onClose, messages,
   const totalMatches = matches.length;
 
   // Notify parent about current highlights
-  // eslint-disable-next-line react-hooks/exhaustive-deps -- matches/onHighlight are stable per render
   useEffect(() => {
     if (!query.trim()) {
       onHighlight([], -1);
@@ -51,12 +50,11 @@ export const SearchBar: React.FC<SearchBarProps> = ({ isOpen, onClose, messages,
       matches: charIndices
     }));
     onHighlight(matchIndices, currentMatchIdx);
-  }, [query, currentMatchIdx, messages]);
+  }, [query, currentMatchIdx, messages, matches, onHighlight]);
 
   // Focus on open
   useEffect(() => {
     if (isOpen) {
-      // eslint-disable-next-line react-hooks/set-state-in-effect -- reset search state when opening
       setQuery('');
       setCurrentMatchIdx(0);
       setTimeout(() => inputRef.current?.focus(), 50);

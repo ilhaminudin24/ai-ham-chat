@@ -13,6 +13,7 @@ export interface PromptChain {
   description: string;
   icon?: string;
   steps: PromptChainStep[];
+  autoAdvance?: boolean;
   createdAt: string;
   updatedAt: string;
 }
@@ -21,6 +22,8 @@ export interface ChainExecutionState {
   conversationId: string;
   chainId: string;
   currentStepIndex: number;
-  status: 'pending_run' | 'running' | 'completed';
-  initialInput?: string; 
+  status: 'pending_run' | 'running' | 'completed' | 'failed';
+  initialInput?: string;
+  stepResults: string[];
+  error?: string;
 }
