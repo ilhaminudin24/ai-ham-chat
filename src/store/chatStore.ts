@@ -194,6 +194,17 @@ const defaultUsageStats: UsageStats = {
   dailyStats: {}
 };
 
+const isActiveUntouchedDraft = (
+  conversation: Conversation | undefined,
+  inputText: string
+): conversation is Conversation =>
+  Boolean(
+    conversation &&
+    conversation.title === 'New Chat' &&
+    conversation.messages.length === 0 &&
+    inputText.trim().length === 0
+  );
+
 export const useChatStore = create<ChatState>()(
   persist(
     (set, get) => ({
@@ -225,6 +236,19 @@ export const useChatStore = create<ChatState>()(
       globalOutputMode: 'auto',
 
       createNewConversation: () => {
+        const state = get();
+        const activeConversation = state.currentConversationId
+          ? state.conversations.find(conv => conv.id === state.currentConversationId)
+          : undefined;
+
+        if (isActiveUntouchedDraft(activeConversation, state.inputText)) {
+          set({
+            currentConversationId: activeConversation.id,
+            isSidebarOpen: false
+          });
+          return;
+        }
+
         const id = Date.now().toString();
         const newConv: Conversation = {
           id,
@@ -239,7 +263,7 @@ export const useChatStore = create<ChatState>()(
           tags: []
         };
         set({
-          conversations: [newConv, ...get().conversations],
+          conversations: [newConv, ...state.conversations],
           currentConversationId: id,
           isSidebarOpen: false
         });
