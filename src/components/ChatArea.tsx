@@ -13,6 +13,7 @@ import { Toast } from './Toast';
 import { SearchBar } from './SearchBar';
 import { TagSelector } from './TagSelector';
 import { SuggestionChips } from './SuggestionChips';
+import { ChainProgressView } from './ChainProgressView';
 import { sendChatRequest } from '../utils/api';
 import { formatConversationAsMarkdown, formatConversationAsPlainText, copyToClipboard } from '../utils/clipboard';
 import { useSwipeGesture } from '../hooks/useSwipeGesture';
@@ -611,6 +612,11 @@ const ChatArea: React.FC<ChatAreaProps> = ({ onOpenSettings }) => {
       {/* Swipe peek indicator */}
       {swipeState.isSwiping && swipeState.offsetX > 5 && (
         <div className={styles.swipePeekBar} style={{ opacity: Math.min(swipeState.offsetX / 40, 1) }} />
+      )}
+
+      {/* Chain Execution Progress */}
+      {currentConversationId && (
+        <ChainProgressView conversationId={currentConversationId} />
       )}
 
       {/* Floating Input Area */}

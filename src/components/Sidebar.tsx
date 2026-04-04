@@ -1,7 +1,10 @@
 import React, { useState, useMemo, useEffect, useRef } from 'react';
-import { MessageSquarePlus, MessageSquare, Trash2, Search, ChevronRight, MoreHorizontal, FolderPlus, X, FolderInput, Pin, Settings, LogOut } from 'lucide-react';
+import { MessageSquarePlus, MessageSquare, Trash2, Search, ChevronRight, MoreHorizontal, FolderPlus, X, FolderInput, Pin, Settings, LogOut, Workflow } from 'lucide-react';
 import { useChatStore } from '../store/chatStore';
 import { SkillsPanel } from './SkillsPanel';
+import { ChainsPanel } from './ChainsPanel';
+import { ChainEditor } from './ChainEditor';
+import type { PromptChain } from '../types/chains';
 import { TagChip } from './TagSelector';
 import styles from './Sidebar.module.css';
 import { supabase } from '../utils/supabase';
@@ -26,6 +29,8 @@ const Sidebar: React.FC = () => {
   } = useChatStore();
   
   const [showSkills, setShowSkills] = useState(false);
+  const [showChains, setShowChains] = useState(false);
+  const [editingChain, setEditingChain] = useState<PromptChain | null>(null);
   const [filterTag, setFilterTag] = useState<string | null>(null);
   const [userEmail, setUserEmail] = useState<string>('');
 
@@ -460,9 +465,20 @@ const Sidebar: React.FC = () => {
           
           <button 
             className={styles.skillsBtn}
+            onClick={() => setShowChains(true)}
+            title="Prompt Chains"
+            style={{ background: 'transparent', border: 'none', color: 'var(--text-secondary)', cursor: 'pointer', padding: '6px', borderRadius: '6px', marginLeft: 'auto' }}
+            onMouseEnter={(e) => e.currentTarget.style.color = 'var(--text-primary)'}
+            onMouseLeave={(e) => e.currentTarget.style.color = 'var(--text-secondary)'}
+          >
+            <Workflow size={18} />
+          </button>
+          
+          <button 
+            className={styles.skillsBtn}
             onClick={() => setShowSkills(true)}
             title="Settings & Skills"
-            style={{ background: 'transparent', border: 'none', color: 'var(--text-secondary)', cursor: 'pointer', padding: '6px', borderRadius: '6px' }}
+            style={{ background: 'transparent', border: 'none', color: 'var(--text-secondary)', cursor: 'pointer', padding: '6px', borderRadius: '6px', marginLeft: '0' }}
             onMouseEnter={(e) => e.currentTarget.style.color = 'var(--text-primary)'}
             onMouseLeave={(e) => e.currentTarget.style.color = 'var(--text-secondary)'}
           >
@@ -485,6 +501,21 @@ const Sidebar: React.FC = () => {
         isOpen={showSkills} 
         onClose={() => setShowSkills(false)}
         onSkillsChange={(skills) => setActiveSkills(skills)}
+      />
+
+      <ChainsPanel
+        isOpen={showChains}
+        onClose={() => setShowChains(false)}
+        onEditChain={(chain) => {
+          setShowChains(false);
+          setEditingChain(chain || null);
+        }}
+      />
+
+      <ChainEditor
+        isOpen={editingChain !== null || (showChains === false && editingChain === null && !isSidebarOpen && !showSkills && false /* hack to trigger new */)}
+        chain={editingChain}
+        onClose={() => setEditingChain(null)}
       />
     </>
   );
