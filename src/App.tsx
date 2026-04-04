@@ -141,16 +141,6 @@ function App() {
         isOpen={showShortcuts} 
         onClose={() => setShowShortcuts(false)} 
       />
-      <button 
-        onClick={() => supabase.auth.signOut()}
-        style={{
-            position: 'absolute', top: '10px', right: '10px', 
-            background: 'var(--bg-secondary)', color: 'var(--text-primary)',
-            padding: '5px 10px', border: '1px solid var(--border-color)', borderRadius: '4px', zIndex: 50, cursor: 'pointer'
-        }}
-      >
-        Logout
-      </button>
     </div>
   );
 }

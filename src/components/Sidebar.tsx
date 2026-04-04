@@ -1,9 +1,10 @@
 import React, { useState, useMemo, useEffect, useRef } from 'react';
-import { MessageSquarePlus, MessageSquare, Trash2, Bot, Search, ChevronRight, MoreHorizontal, FolderPlus, X, FolderInput, Pin, Settings } from 'lucide-react';
+import { MessageSquarePlus, MessageSquare, Trash2, Search, ChevronRight, MoreHorizontal, FolderPlus, X, FolderInput, Pin, Settings, LogOut } from 'lucide-react';
 import { useChatStore } from '../store/chatStore';
 import { SkillsPanel } from './SkillsPanel';
 import { TagChip } from './TagSelector';
 import styles from './Sidebar.module.css';
+import { supabase } from '../utils/supabase';
 
 const Sidebar: React.FC = () => {
   const { 
@@ -26,6 +27,13 @@ const Sidebar: React.FC = () => {
   
   const [showSkills, setShowSkills] = useState(false);
   const [filterTag, setFilterTag] = useState<string | null>(null);
+  const [userEmail, setUserEmail] = useState<string>('');
+
+  useEffect(() => {
+    supabase.auth.getUser().then(({ data }) => {
+      if (data.user) setUserEmail(data.user.email || '');
+    });
+  }, []);
 
   const [expandedFolders, setExpandedFolders] = useState<string[]>(['today', 'work', 'personal']);
   const [showFolderMenu, setShowFolderMenu] = useState<string | null>(null);
@@ -427,20 +435,43 @@ const Sidebar: React.FC = () => {
           )}
         </div>
 
-        <div className={styles.sidebarFooter}>
-          <div className={styles.avatar}>
-            <Bot size={20} />
+        <div className={styles.sidebarFooter} style={{ display: 'flex', alignItems: 'center', padding: '16px', borderTop: '1px solid var(--border-sidebar)', gap: '10px' }}>
+          <div style={{ 
+            background: 'var(--accent-brand, #C2955B)', color: '#fff', 
+            width: '32px', height: '32px', borderRadius: '50%', flexShrink: 0,
+            display: 'flex', alignItems: 'center', justifyContent: 'center', 
+            fontSize: '14px', fontWeight: 'bold' 
+          }}>
+            {userEmail ? userEmail.substring(0, 1).toUpperCase() : 'U'}
           </div>
-          <div>
-            <div style={{ fontWeight: 500, fontSize: '0.9rem' }}>AI-HAM</div>
-            <div style={{ color: 'var(--text-muted)', fontSize: '0.8rem' }}>Online</div>
+          <div style={{ flex: 1, minWidth: 0 }}>
+            <div style={{ fontWeight: 500, fontSize: '0.85rem', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis', color: 'var(--text-primary)' }}>
+               {userEmail || 'Boss Ilham'}
+            </div>
+            <div style={{ color: 'var(--tag-green, #22c55e)', fontSize: '0.75rem', fontWeight: 500 }}>
+               Online
+            </div>
           </div>
+          
           <button 
             className={styles.skillsBtn}
             onClick={() => setShowSkills(true)}
-            title="Skills Manager"
+            title="Settings & Skills"
+            style={{ background: 'transparent', border: 'none', color: 'var(--text-secondary)', cursor: 'pointer', padding: '6px', borderRadius: '6px' }}
+            onMouseEnter={(e) => e.currentTarget.style.color = 'var(--text-primary)'}
+            onMouseLeave={(e) => e.currentTarget.style.color = 'var(--text-secondary)'}
           >
             <Settings size={18} />
+          </button>
+          
+          <button 
+            onClick={() => supabase.auth.signOut()}
+            title="Log out"
+            style={{ background: 'transparent', border: 'none', color: 'var(--text-secondary)', cursor: 'pointer', padding: '6px', borderRadius: '6px' }}
+            onMouseEnter={(e) => e.currentTarget.style.color = 'var(--tag-red, #ef4444)'}
+            onMouseLeave={(e) => e.currentTarget.style.color = 'var(--text-secondary)'}
+          >
+            <LogOut size={18} />
           </button>
         </div>
       </aside>
