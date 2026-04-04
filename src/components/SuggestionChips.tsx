@@ -83,10 +83,9 @@ export const SuggestionChips: React.FC<SuggestionChipsProps> = ({
             key={chip.id}
             className={`${styles.chip} ${styles.fixedChip}`}
             onClick={() => {
+              handleClick(chip);
               if (chip.type === 'translate' && onTranslateToggle) {
                 onTranslateToggle();
-              } else {
-                handleClick(chip);
               }
             }}
             style={{ animationDelay: `${(aiSuggestions.length + index) * 0.08}s` }}
