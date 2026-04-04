@@ -311,7 +311,7 @@
 }
 
 .chatItem.active {
-  background: linear-gradient(180deg, var(--bg-sidebar-hover), rgba(25, 37, 57, 0.92));
+  background: linear-gradient(180deg, var(--bg-sidebar-hover), var(--bg-elevated));
   color: var(--text-primary);
   font-weight: 500;
   border-color: rgba(124, 150, 255, 0.28);
@@ -553,7 +553,7 @@
   display: flex;
   align-items: center;
   gap: 12px;
-  background: linear-gradient(180deg, rgba(9, 17, 31, 0), rgba(12, 20, 35, 0.88) 22%);
+  background: linear-gradient(180deg, transparent, var(--bg-sidebar) 22%);
 }
 
 .profileAvatar {
@@ -564,7 +564,7 @@
   display: flex;
   align-items: center;
   justify-content: center;
-  color: #fff;
+  color: var(--text-primary);
   font-size: 0.85rem;
   font-weight: 700;
   box-shadow: 0 12px 24px rgba(79, 70, 229, 0.24);

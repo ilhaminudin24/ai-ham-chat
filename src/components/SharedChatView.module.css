@@ -62,7 +62,7 @@
   justify-content: space-between;
   padding: 1.4rem 2rem;
   border-bottom: 1px solid var(--border-light);
-  background: rgba(11, 18, 32, 0.86);
+  background: var(--bg-modal);
   backdrop-filter: blur(16px);
 }
 
@@ -171,7 +171,7 @@
 }
 
 .aiMessage .messageBubble {
-  background: rgba(15, 23, 42, 0.84);
+  background: var(--bg-elevated);
   color: var(--text-primary);
   border-bottom-left-radius: 8px;
   box-shadow: var(--shadow-card);

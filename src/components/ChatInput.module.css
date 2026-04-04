@@ -4,7 +4,7 @@
   left: 0;
   right: 0;
   padding: 18px 20px 28px;
-  background: linear-gradient(to top, rgba(9, 17, 31, 0.94) 68%, transparent);
+  background: linear-gradient(to top, var(--bg-app) 68%, transparent);
   z-index: 10;
   transition: border-color var(--transition-fast);
   backdrop-filter: blur(14px);
