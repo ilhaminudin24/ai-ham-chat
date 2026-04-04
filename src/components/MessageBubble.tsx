@@ -59,9 +59,20 @@ const hasTable = (content: string): boolean => {
 const CodeBlock = ({ node, inline, className, children, ...props }: any) => {
   const match = /language-(\w+)/.exec(className || '');
   const [copied, setCopied] = useState(false);
+  const codeString = String(children).replace(/\n$/, '');
   
+  let isValidJson: boolean | null = null;
+  if (match && match[1] === 'json') {
+    try {
+      JSON.parse(codeString);
+      isValidJson = true;
+    } catch {
+      isValidJson = false;
+    }
+  }
+
   const handleCopy = () => {
-    navigator.clipboard.writeText(String(children).replace(/\n$/, ''));
+    navigator.clipboard.writeText(codeString);
     setCopied(true);
     setTimeout(() => setCopied(false), 2000);
   };
@@ -70,10 +81,14 @@ const CodeBlock = ({ node, inline, className, children, ...props }: any) => {
     return (
       <div style={{ margin: '16px 0', borderRadius: '12px', overflow: 'hidden' }}>
         <div className={styles.codeHeader}>
-          <span>{match[1]}</span>
+          <div className={styles.codeLangGroup}>
+            <span>{match[1]}</span>
+            {isValidJson === true && <span className={styles.jsonValidBadge}>✅ Valid JSON</span>}
+            {isValidJson === false && <span className={styles.jsonInvalidBadge} title="Syntax error: invalid JSON format">❌ Invalid JSON</span>}
+          </div>
           <button onClick={handleCopy} className={styles.copyBtn}>
             {copied ? <Check size={14} /> : <Copy size={14} />}
-            {copied ? 'Copied!' : 'Copy'}
+            {copied ? 'Copied!' : (match[1] === 'json' ? 'Copy as JSON' : 'Copy')}
           </button>
         </div>
         <SyntaxHighlighter
@@ -83,7 +98,7 @@ const CodeBlock = ({ node, inline, className, children, ...props }: any) => {
           PreTag="div"
           customStyle={{ margin: 0, borderRadius: '0 0 12px 12px' }}
         >
-          {String(children).replace(/\n$/, '')}
+          {codeString}
         </SyntaxHighlighter>
       </div>
     );
@@ -154,7 +169,7 @@ export const MessageBubble: React.FC<Props> = ({ message, messageIndex = 0, onEd
                 {containsTable && (
                   <button onClick={handleCopyTable} className={styles.copyTableBtn} title="Copy table for Excel/Outlook">
                     {tableCopied ? <Check size={14} /> : <Table size={14} />}
-                    {tableCopied ? 'Table Copied!' : 'Copy Table'}
+                    {tableCopied ? 'Table Copied!' : 'Copy as Table'}
                   </button>
                 )}
                 <button onClick={handleCopyText} className={styles.copyTextBtn} title="Copy for email">

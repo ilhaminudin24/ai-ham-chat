@@ -257,6 +257,32 @@
   border-bottom: 1px solid #1a1a1c;
 }
 
+.codeLangGroup {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.jsonValidBadge {
+  background: rgba(16, 185, 129, 0.15);
+  color: #10b981;
+  padding: 2px 6px;
+  border-radius: 4px;
+  font-size: 0.7rem;
+  font-weight: 500;
+  cursor: default;
+}
+
+.jsonInvalidBadge {
+  background: rgba(239, 68, 68, 0.15);
+  color: #ef4444;
+  padding: 2px 6px;
+  border-radius: 4px;
+  font-size: 0.7rem;
+  font-weight: 500;
+  cursor: help;
+}
+
 .copyBtn {
   background: transparent;
   border: none;

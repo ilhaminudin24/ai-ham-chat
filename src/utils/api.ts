@@ -35,9 +35,21 @@ export const sendChatRequest = async (
     const currentConv = store.conversations.find(c => c.id === conversationId);
     const convSystemPrompt = currentConv?.systemPrompt;
     
+    // Determine active output mode
+    const outputMode = currentConv?.outputMode || store.globalOutputMode || 'auto';
+    
     let fullSystemPrompt = BASE_SYSTEM_PROMPT;
     if (convSystemPrompt) fullSystemPrompt += `\n\n${convSystemPrompt}`;
     if (skillsPrompt) fullSystemPrompt += `\n\n${skillsPrompt}`;
+    
+    // Inject output mode instructions
+    if (outputMode === 'json') {
+      fullSystemPrompt += `\n\nAlways respond with valid JSON. Wrap in \`\`\`json code block.`;
+    } else if (outputMode === 'table') {
+      fullSystemPrompt += `\n\nAlways format data as markdown tables.`;
+    } else if (outputMode === 'code') {
+      fullSystemPrompt += `\n\nOnly respond with code. No explanations unless asked.`;
+    }
 
     // Map to API format - add system prompt at the beginning
     // Process messages async to extract PDF text

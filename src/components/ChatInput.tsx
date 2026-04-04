@@ -1,7 +1,7 @@
 import React, { useState, useRef, useEffect, useCallback } from 'react';
-import { Send, X, Square, FileText, Paperclip } from 'lucide-react';
+import { Send, X, Square, FileText, Paperclip, Braces, Code, LayoutGrid, Wand2 } from 'lucide-react';
 import { useChatStore } from '../store/chatStore';
-import type { FileAttachment } from '../store/chatStore';
+import type { FileAttachment, OutputMode } from '../store/chatStore';
 import { sendChatRequest } from '../utils/api';
 import { SlashCommandPalette } from './SlashCommandPalette';
 import { formatConversationAsMarkdown, copyToClipboard } from '../utils/clipboard';
@@ -34,6 +34,7 @@ interface ChatInputProps {
 const ChatInput: React.FC<ChatInputProps> = ({ onShowTemplates, onShowToast }) => {
   const [files, setFiles] = useState<FileAttachment[]>([]);
   const [isDragActive, setIsDragActive] = useState(false);
+  const [showOutputDir, setShowOutputDir] = useState(false);
   
   const textareaRef = useRef<HTMLTextAreaElement>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
@@ -49,12 +50,27 @@ const ChatInput: React.FC<ChatInputProps> = ({ onShowTemplates, onShowToast }) =
     createNewConversation,
     setSelectedModel,
     clearConversationMessages,
-    setConversationSystemPrompt
+    setConversationSystemPrompt,
+    globalOutputMode,
+    setGlobalOutputMode,
+    setConversationOutputMode
   } = useChatStore();
 
   const text = inputText;
   const isSlashActive = text.startsWith('/');
   const slashQuery = isSlashActive ? text.slice(1).split(' ')[0] : '';
+  
+  const currentConv = conversations.find(c => c.id === currentConversationId);
+  const activeOutputMode = currentConv?.outputMode || globalOutputMode;
+
+  const handleModeSelect = (mode: OutputMode) => {
+    if (currentConversationId) {
+      setConversationOutputMode(currentConversationId, mode);
+    } else {
+      setGlobalOutputMode(mode);
+    }
+    setShowOutputDir(false);
+  };
 
   const handleInput = () => {
     if (textareaRef.current) {
@@ -362,6 +378,28 @@ const ChatInput: React.FC<ChatInputProps> = ({ onShowTemplates, onShowToast }) =
              >
                <Paperclip size={20} />
              </button>
+             <div className={styles.modeDropdownWrapper}>
+               <button 
+                 className={`${styles.toolBtn} ${activeOutputMode !== 'auto' ? styles.activeMode : ''}`}
+                 onClick={() => setShowOutputDir(!showOutputDir)}
+                 title="Set Output Mode"
+                 disabled={isStreaming}
+               >
+                 {activeOutputMode === 'auto' && <Wand2 size={18} />}
+                 {activeOutputMode === 'json' && <Braces size={18} />}
+                 {activeOutputMode === 'table' && <LayoutGrid size={18} />}
+                 {activeOutputMode === 'code' && <Code size={18} />}
+               </button>
+               {showOutputDir && (
+                 <div className={styles.modeDropdownMenu}>
+                   <div className={styles.modeDropdownTitle}>Output Format</div>
+                   <button className={`${styles.modeOption} ${activeOutputMode === 'auto' ? styles.selected : ''}`} onClick={() => handleModeSelect('auto')}><Wand2 size={14} /> Auto</button>
+                   <button className={`${styles.modeOption} ${activeOutputMode === 'json' ? styles.selected : ''}`} onClick={() => handleModeSelect('json')}><Braces size={14} /> JSON</button>
+                   <button className={`${styles.modeOption} ${activeOutputMode === 'table' ? styles.selected : ''}`} onClick={() => handleModeSelect('table')}><LayoutGrid size={14} /> Table</button>
+                   <button className={`${styles.modeOption} ${activeOutputMode === 'code' ? styles.selected : ''}`} onClick={() => handleModeSelect('code')}><Code size={14} /> Code</button>
+                 </div>
+               )}
+             </div>
              <input 
                type="file" 
                ref={fileInputRef} 

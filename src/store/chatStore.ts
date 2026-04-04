@@ -2,6 +2,8 @@ import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
 import type { Skill } from '../types/skills';
 
+export type OutputMode = 'auto' | 'json' | 'table' | 'code';
+
 export interface FileAttachment {
   id: string;
   name: string;
@@ -39,6 +41,7 @@ export interface Conversation {
   isPinned: boolean;
   tags: string[];
   systemPrompt?: string;
+  outputMode?: OutputMode;
 }
 
 export interface Folder {
@@ -164,6 +167,11 @@ export interface ChatState {
   // System prompt per conversation
   setConversationSystemPrompt: (convId: string, prompt: string) => void;
   
+  // Output Mode
+  globalOutputMode: OutputMode;
+  setGlobalOutputMode: (mode: OutputMode) => void;
+  setConversationOutputMode: (convId: string, mode: OutputMode) => void;
+  
   // Clear messages in conversation
   clearConversationMessages: (convId: string) => void;
 }
@@ -216,6 +224,9 @@ export const useChatStore = create<ChatState>()(
       followUpSuggestions: [],
       showFollowUpSuggestions: true, // Default ON
       translateMode: 'to-en',
+      
+      // Output Mode
+      globalOutputMode: 'auto',
 
       createNewConversation: () => {
         const id = Date.now().toString();
@@ -722,6 +733,17 @@ export const useChatStore = create<ChatState>()(
         });
       },
       
+      // Output Mode
+      setGlobalOutputMode: (mode) => set({ globalOutputMode: mode }),
+      setConversationOutputMode: (convId, mode) => {
+        set({
+          conversations: get().conversations.map(conv => {
+            if (conv.id !== convId) return conv;
+            return { ...conv, outputMode: mode };
+          })
+        });
+      },
+      
       // Clear messages in a conversation
       clearConversationMessages: (convId) => {
         set({
@@ -745,7 +767,8 @@ export const useChatStore = create<ChatState>()(
         folders: state.folders,
         settings: state.settings,
         activeSkills: state.activeSkills,
-        usageStats: state.usageStats
+        usageStats: state.usageStats,
+        globalOutputMode: state.globalOutputMode
       }),
     }
   )
