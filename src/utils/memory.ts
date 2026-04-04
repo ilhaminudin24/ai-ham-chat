@@ -20,6 +20,11 @@ const STOP_WORDS = new Set([
   'the', 'and', 'for', 'with', 'you', 'your', 'sudah', 'akan', 'adalah', 'sebagai', 'using', 'uses', 'pakai',
 ]);
 
+type QuerySignal = {
+  categories: MemoryCategory[];
+  keywords: string[];
+};
+
 export function normalizeMemoryContent(content: string): string {
   return content.replace(/\s+/g, ' ').trim();
 }
@@ -106,16 +111,75 @@ function scoreOverlap(query: string, memory: MemoryItem): number {
   return queryTokens.reduce((score, token) => score + (haystack.includes(token) ? 1 : 0), 0);
 }
 
+function getQuerySignals(query: string): QuerySignal {
+  const lower = query.toLowerCase();
+  const categories = new Set<MemoryCategory>();
+  const keywords = new Set<string>();
+
+  if (/(siapa saya|who am i|nama saya|my name|tentang saya|profil saya)/i.test(lower)) {
+    categories.add('personal');
+    categories.add('reference');
+    keywords.add('nama');
+    keywords.add('name');
+    keywords.add('saya');
+  }
+
+  if (/(kerja di mana|where do i work|bekerja di|tempat kerja|company|perusahaan|kantor|employer)/i.test(lower)) {
+    categories.add('personal');
+    categories.add('reference');
+    keywords.add('kerja');
+    keywords.add('bekerja');
+    keywords.add('company');
+    keywords.add('perusahaan');
+  }
+
+  if (/(prefer|preference|lebih suka|favorite|favorit|biasanya pakai|tool favorit)/i.test(lower)) {
+    categories.add('preference');
+    categories.add('workstyle');
+  }
+
+  if (/(project|proyek|stack|tech stack|pakai apa|menggunakan apa|built with)/i.test(lower)) {
+    categories.add('project');
+  }
+
+  if (/(cara jawab|jawab seperti apa|ringkas|detail|step by step|gaya kerja)/i.test(lower)) {
+    categories.add('workstyle');
+  }
+
+  return {
+    categories: [...categories],
+    keywords: [...keywords],
+  };
+}
+
 export function getRelevantMemories(
   memories: MemoryItem[],
   query: string,
   limit = 6
 ): MemoryItem[] {
   const confirmed = memories.filter(memory => memory.status === 'confirmed' && memory.enabled);
+  const signals = getQuerySignals(query);
+
   return [...confirmed]
     .sort((a, b) => {
-      const aScore = (a.pinned ? 100 : 0) + scoreOverlap(query, a) * 10 + a.confidence * 5;
-      const bScore = (b.pinned ? 100 : 0) + scoreOverlap(query, b) * 10 + b.confidence * 5;
+      const scoreMemory = (memory: MemoryItem) => {
+        const haystack = `${memory.content} ${memory.sourceSnippet || ''}`.toLowerCase();
+        const categoryBoost = signals.categories.includes(memory.category) ? 35 : 0;
+        const keywordBoost = signals.keywords.reduce((score, keyword) => score + (haystack.includes(keyword) ? 8 : 0), 0);
+        const recencyBoost = memory.lastUsedAt ? 4 : 0;
+
+        return (
+          (memory.pinned ? 100 : 0) +
+          categoryBoost +
+          keywordBoost +
+          scoreOverlap(query, memory) * 10 +
+          memory.confidence * 5 +
+          recencyBoost
+        );
+      };
+
+      const aScore = scoreMemory(a);
+      const bScore = scoreMemory(b);
 
       if (aScore !== bScore) return bScore - aScore;
       return new Date(b.updatedAt).getTime() - new Date(a.updatedAt).getTime();
@@ -131,5 +195,5 @@ export function formatMemoriesForPrompt(memories: MemoryItem[]): string {
     return `- ${prefix} ${memory.content}`;
   });
 
-  return `Known memory about the user and ongoing context:\n${lines.join('\n')}`;
+  return `Persistent memory about the user and ongoing context. Treat confirmed memories below as trusted facts when relevant.\nUse them especially for questions about identity, preferences, work, projects, and profile context. If a relevant memory exists, answer from it directly instead of guessing or saying you do not know.\n${lines.join('\n')}`;
 }
