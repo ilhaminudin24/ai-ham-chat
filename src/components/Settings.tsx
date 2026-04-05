@@ -36,6 +36,8 @@ const THEME_OPTIONS: { value: 'dark' | 'light' | 'system'; label: string; icon: 
 const Settings: React.FC<SettingsProps> = ({ onClose }) => {
   const {
     settings,
+    globalOutputMode,
+    setGlobalOutputMode,
     setSoundEnabled,
     setDefaultModel,
     clearAllConversations,
@@ -98,6 +100,32 @@ const Settings: React.FC<SettingsProps> = ({ onClose }) => {
               >
                 <div className={styles.toggleKnob} />
               </button>
+            </div>
+          </div>
+
+          {/* Output Format */}
+          <div className={styles.section}>
+            <div className={styles.sectionTitle}>Output</div>
+            <div className={styles.settingItem}>
+              <div className={styles.settingInfo}>
+                <div className={styles.settingIcon}>
+                  <Bot size={20} />
+                </div>
+                <div>
+                  <div className={styles.settingLabel}>Default Output Format</div>
+                  <div className={styles.settingDesc}>Choose how AI-HAM formats responses by default.</div>
+                </div>
+              </div>
+              <select
+                className={styles.outputSelect}
+                value={globalOutputMode}
+                onChange={(e) => setGlobalOutputMode(e.target.value as any)}
+              >
+                <option value="auto">Auto</option>
+                <option value="json">JSON</option>
+                <option value="table">Table</option>
+                <option value="code">Code</option>
+              </select>
             </div>
           </div>
 

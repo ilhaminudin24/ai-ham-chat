@@ -361,3 +361,20 @@
     width: 100%;
   }
 }
+
+
+.outputSelect {
+  min-width: 160px;
+  padding: 10px 12px;
+  border-radius: var(--radius-sm);
+  border: 1px solid var(--border-light);
+  background: var(--bg-input);
+  color: var(--text-primary);
+  font-size: 0.9rem;
+  cursor: pointer;
+}
+
+.outputSelect:focus {
+  outline: none;
+  border-color: var(--accent-brand);
+}
