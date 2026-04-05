@@ -7,6 +7,93 @@ let currentUserId: string | null = null;
 let unsubscribeConversations: (() => void) | null = null;
 let unsubscribeMemories: (() => void) | null = null;
 
+// ---------------------------------------------------------------------------
+// Debounced sync — prevents flooding Supabase during streaming (100-500+ upserts
+// per response).  Conversations are batched and flushed at most once every SYNC_DEBOUNCE_MS
+// while streaming, and once immediately after streaming ends.
+// ---------------------------------------------------------------------------
+const SYNC_DEBOUNCE_MS = 3000;
+const pendingConvUpserts = new Map<string, Conversation>();
+const pendingConvDeletes = new Set<string>();
+let convSyncTimer: ReturnType<typeof setTimeout> | null = null;
+
+const flushConversationSync = () => {
+  if (convSyncTimer) { clearTimeout(convSyncTimer); convSyncTimer = null; }
+  if (!currentUserId) return;
+
+  const userId = currentUserId;
+
+  // Process upserts
+  for (const conv of pendingConvUpserts.values()) {
+    supabase.from('conversations').upsert({
+      id: conv.id,
+      user_id: userId,
+      title: conv.title,
+      messages: conv.messages,
+      updated_at: new Date().toISOString()
+    }).then(({ error }) => {
+      if (error) console.error('Error syncing chat to Supabase', error);
+    });
+  }
+  pendingConvUpserts.clear();
+
+  // Process deletes
+  for (const id of pendingConvDeletes) {
+    supabase.from('conversations').delete().eq('id', id).then();
+  }
+  pendingConvDeletes.clear();
+};
+
+// Memory sync is less frequent so a simpler debounce suffices
+const MEMORY_SYNC_DEBOUNCE_MS = 2000;
+let memorySyncTimer: ReturnType<typeof setTimeout> | null = null;
+const pendingMemoryUpserts = new Map<string, MemoryItem>();
+const pendingMemoryDeletes = new Set<string>();
+
+const flushMemorySync = () => {
+  if (memorySyncTimer) { clearTimeout(memorySyncTimer); memorySyncTimer = null; }
+  if (!currentUserId) return;
+
+  const userId = currentUserId;
+
+  for (const memory of pendingMemoryUpserts.values()) {
+    supabase.from('memories').upsert({
+      id: memory.id,
+      user_id: userId,
+      content: memory.content,
+      category: memory.category,
+      status: memory.status,
+      origin: memory.origin,
+      source_conversation_id: memory.sourceConversationId,
+      source_snippet: memory.sourceSnippet,
+      pinned: memory.pinned,
+      enabled: memory.enabled,
+      review_required: memory.reviewRequired,
+      is_sensitive: memory.isSensitive,
+      confidence: memory.confidence,
+      created_at: memory.createdAt,
+      updated_at: memory.updatedAt,
+      last_used_at: memory.lastUsedAt,
+    }).then(({ error: syncError }) => {
+      if (syncError) console.error('Error syncing memories to Supabase', syncError);
+    });
+  }
+  pendingMemoryUpserts.clear();
+
+  for (const id of pendingMemoryDeletes) {
+    supabase.from('memories').delete().eq('id', id).then(({ error: deleteError }) => {
+      if (deleteError) console.error('Error deleting memory from Supabase', deleteError);
+    });
+  }
+  pendingMemoryDeletes.clear();
+};
+
+const scheduleMemorySync = () => {
+  if (!memorySyncTimer) {
+    memorySyncTimer = setTimeout(flushMemorySync, MEMORY_SYNC_DEBOUNCE_MS);
+  }
+};
+
 export const initSupabaseSync = async (userId: string) => {
   if (currentUserId === userId) return;
   currentUserId = userId;
@@ -32,8 +119,6 @@ export const initSupabaseSync = async (userId: string) => {
       tags: []
     }));
 
-    // For smooth transition, merge with LocalStorage if this is the first login
-    // Or just overwrite. We will completely overwrite with cloud source-of-truth.
     useChatStore.setState({ 
         conversations: cloudConvs,
         currentConversationId: cloudConvs.length > 0 ? cloudConvs[0].id : null
@@ -70,7 +155,7 @@ export const initSupabaseSync = async (userId: string) => {
     }
   }
 
-  // 2. Subscribe to state changes and sync incrementally
+  // 2. Subscribe to state changes with debounced sync
   if (unsubscribeConversations) unsubscribeConversations();
   if (unsubscribeMemories) unsubscribeMemories();
   
@@ -78,36 +163,30 @@ export const initSupabaseSync = async (userId: string) => {
   let previousMemories = useMemoryStore.getState().memories;
 
   unsubscribeConversations = useChatStore.subscribe((state) => {
-    if (!currentUserId) return; // logged out
+    if (!currentUserId) return;
 
     const newConvs = state.conversations;
     
-    // Find what changed or was added
     newConvs.forEach(conv => {
       const prevConv = previousConvs.find(p => p.id === conv.id);
       if (prevConv !== conv) {
-        // Upsert to Supabase
-        // Note: Using standard timeout debounce could be better, but firing promises directly is fine for this scale
-        supabase.from('conversations').upsert({
-          id: conv.id,
-          user_id: currentUserId,
-          title: conv.title,
-          messages: conv.messages,
-          updated_at: new Date().toISOString()
-        }).then(({error}) => {
-          if (error) console.error("Error syncing chat to Supabase", error);
-        });
+        pendingConvUpserts.set(conv.id, conv);
       }
     });
 
-    // Find what was deleted locally
     previousConvs.forEach(prevConv => {
       if (!newConvs.find(n => n.id === prevConv.id)) {
-        supabase.from('conversations').delete().eq('id', prevConv.id).then();
+        pendingConvDeletes.add(prevConv.id);
+        pendingConvUpserts.delete(prevConv.id);
       }
     });
 
     previousConvs = newConvs;
+
+    // If not streaming, flush faster (1s); while streaming, use longer debounce
+    if (convSyncTimer) clearTimeout(convSyncTimer);
+    const delay = state.isStreaming ? SYNC_DEBOUNCE_MS : 1000;
+    convSyncTimer = setTimeout(flushConversationSync, delay);
   });
 
   unsubscribeMemories = useMemoryStore.subscribe((state) => {
@@ -118,42 +197,27 @@ export const initSupabaseSync = async (userId: string) => {
     newMemories.forEach(memory => {
       const prevMemory = previousMemories.find(item => item.id === memory.id);
       if (prevMemory !== memory) {
-        supabase.from('memories').upsert({
-          id: memory.id,
-          user_id: currentUserId,
-          content: memory.content,
-          category: memory.category,
-          status: memory.status,
-          origin: memory.origin,
-          source_conversation_id: memory.sourceConversationId,
-          source_snippet: memory.sourceSnippet,
-          pinned: memory.pinned,
-          enabled: memory.enabled,
-          review_required: memory.reviewRequired,
-          is_sensitive: memory.isSensitive,
-          confidence: memory.confidence,
-          created_at: memory.createdAt,
-          updated_at: memory.updatedAt,
-          last_used_at: memory.lastUsedAt,
-        }).then(({ error: syncError }) => {
-          if (syncError) console.error('Error syncing memories to Supabase', syncError);
-        });
+        pendingMemoryUpserts.set(memory.id, memory);
       }
     });
 
     previousMemories.forEach(prevMemory => {
       if (!newMemories.find(memory => memory.id === prevMemory.id)) {
-        supabase.from('memories').delete().eq('id', prevMemory.id).then(({ error: deleteError }) => {
-          if (deleteError) console.error('Error deleting memory from Supabase', deleteError);
-        });
+        pendingMemoryDeletes.add(prevMemory.id);
+        pendingMemoryUpserts.delete(prevMemory.id);
       }
     });
 
     previousMemories = newMemories;
+    scheduleMemorySync();
   });
 };
 
 export const clearSupabaseSync = () => {
+    // Flush any pending changes before disconnecting
+    flushConversationSync();
+    flushMemorySync();
+
     currentUserId = null;
     if (unsubscribeConversations) {
         unsubscribeConversations();

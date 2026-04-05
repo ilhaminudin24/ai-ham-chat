@@ -13,6 +13,43 @@ const API_BASE = '/v1';
 // Base system prompt
 const BASE_SYSTEM_PROMPT = `You are AI-HAM, a helpful, intelligent, and friendly AI assistant. You are designed to assist Boss Ilham with various tasks including answering questions, providing information, helping with projects, and engaging in meaningful conversations. Your goal is to be helpful, accurate, and reliable. Always maintain a caring and supportive tone while being intelligent and practical in your responses.`;
 
+// ---------------------------------------------------------------------------
+// RAF-batched token flusher — collects SSE tokens and flushes to the store at
+// most once per animation frame (~60 Hz), reducing 500+ set() calls to ~60/sec.
+// ---------------------------------------------------------------------------
+const createTokenBatcher = (conversationId: string) => {
+  let buffer = '';
+  let rafId: number | null = null;
+
+  const flush = () => {
+    rafId = null;
+    if (buffer) {
+      useChatStore.getState().updateLastMessage(conversationId, buffer);
+      buffer = '';
+    }
+  };
+
+  return {
+    push(token: string) {
+      buffer += token;
+      if (rafId === null) {
+        rafId = requestAnimationFrame(flush);
+      }
+    },
+    /** Force-flush any remaining buffered tokens (call when stream ends). */
+    flush() {
+      if (rafId !== null) {
+        cancelAnimationFrame(rafId);
+        rafId = null;
+      }
+      if (buffer) {
+        useChatStore.getState().updateLastMessage(conversationId, buffer);
+        buffer = '';
+      }
+    },
+  };
+};
+
 export const sendChatRequest = async (
   conversationId: string, 
   messages: Message[], 
@@ -20,6 +57,7 @@ export const sendChatRequest = async (
 ) => {
   const store = useChatStore.getState();
   const abortController = new AbortController();
+  const batcher = createTokenBatcher(conversationId);
 
   try {
     store.setAbortController(abortController);
@@ -181,7 +219,7 @@ export const sendChatRequest = async (
                 store.setStreamingPhase('streaming');
                 firstToken = false;
               }
-              store.updateLastMessage(conversationId, delta);
+              batcher.push(delta);
             }
           } catch (e) {
             // Error parsing this specific chunk, ignore and continue
@@ -190,7 +228,11 @@ export const sendChatRequest = async (
         }
       }
     }
+
+    // Flush any remaining buffered tokens
+    batcher.flush();
   } catch (error) {
+    batcher.flush();
     if ((error as { name?: string }).name === 'AbortError') {
       // User cancelled streaming — don't show error
       return;
@@ -203,20 +245,15 @@ export const sendChatRequest = async (
     store.setStreamingPhase(null);
     store.setAbortController(null);
     
-    // Auto-title generation after first AI response
+    // Auto-title generation + follow-up suggestions — run in parallel (fire-and-forget)
     const updatedConv = useChatStore.getState().conversations.find(c => c.id === conversationId);
     
     // Generate title only on first AI response (when 2 messages total)
     if (updatedConv && updatedConv.messages.length === 2) {
-      // Always generate title after first AI response (msgCount === 2)
-      // Ignore current title - we'll update it anyway
       console.log('[AutoTitle] Starting title generation after first AI response...');
-      
-      // Start generating title
       const aiMsgIndex = 1;
       store.setGeneratingTitle(true, null, aiMsgIndex);
       
-      // Generate title in background (non-blocking)
       generateTitle(updatedConv.messages, (title, suggestedFolder) => {
         console.log('[AutoTitle] Generated:', title, suggestedFolder);
         if (title) {
@@ -227,23 +264,15 @@ export const sendChatRequest = async (
       });
     }
     
-    // Generate follow-up suggestions after EVERY AI response (not just first)
+    // Generate follow-up suggestions — runs in parallel with title generation
     const chatSettings = useChatStore.getState().settings;
-    const suggestionsEnabled = chatSettings.enableFollowUpSuggestions !== false; // Default to true
-    
-    console.log('[Suggestions] Checking:', {
-      enableFollowUpSuggestions: chatSettings.enableFollowUpSuggestions,
-      suggestionsEnabled,
-      msgCount: updatedConv?.messages.length,
-      lastRole: updatedConv?.messages[updatedConv.messages.length - 1]?.role
-    });
+    const suggestionsEnabled = chatSettings.enableFollowUpSuggestions !== false;
     
     if (updatedConv && suggestionsEnabled) {
-      const messages = updatedConv.messages;
-      const lastMessage = messages[messages.length - 1];
-      const userMessage = messages[messages.length - 2];
+      const msgs = updatedConv.messages;
+      const lastMessage = msgs[msgs.length - 1];
+      const userMessage = msgs[msgs.length - 2];
       
-      // Only generate if last message is from assistant and there's a user message before it
       if (lastMessage?.role === 'assistant' && userMessage?.role === 'user') {
         console.log('[Suggestions] Generating suggestions after AI response...');
         generateSuggestions(lastMessage.content, userMessage.content, (suggestions) => {

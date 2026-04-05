@@ -131,7 +131,7 @@ const CodeBlock = ({ inline, className, children, ...props }: any) => {
   );
 };
 
-export const MessageBubble: React.FC<Props> = ({ message, messageIndex = 0, onEdit, onBranch, isLastAI, onRegenerate, regenerationCount }) => {
+const MessageBubbleInner: React.FC<Props> = ({ message, messageIndex = 0, onEdit, onBranch, isLastAI, onRegenerate, regenerationCount }) => {
   const isUser = message.role === 'user';
   const [copied, setCopied] = useState(false);
   const [tableCopied, setTableCopied] = useState(false);
@@ -298,3 +298,17 @@ export const MessageBubble: React.FC<Props> = ({ message, messageIndex = 0, onEd
     </div>
   );
 };
+
+// Memoize to prevent expensive re-renders of react-markdown + syntax-highlighter
+// for non-streaming messages when only the last message content changes.
+export const MessageBubble = React.memo(MessageBubbleInner, (prev, next) => {
+  return (
+    prev.message.content === next.message.content &&
+    prev.message.role === next.message.role &&
+    prev.isLastAI === next.isLastAI &&
+    prev.regenerationCount === next.regenerationCount &&
+    prev.searchQuery === next.searchQuery &&
+    prev.highlightRanges === next.highlightRanges &&
+    prev.messageIndex === next.messageIndex
+  );
+});

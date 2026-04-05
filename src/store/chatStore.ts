@@ -1,7 +1,57 @@
 import { create } from 'zustand';
-import { persist } from 'zustand/middleware';
+import { persist, createJSONStorage } from 'zustand/middleware';
 import type { Skill } from '../types/skills';
 import { useMemoryStore } from './memoryStore';
+
+// ---------------------------------------------------------------------------
+// Debounced localStorage wrapper — prevents persist from thrashing localStorage
+// during streaming (100-500+ writes/sec → max 1 write per DEBOUNCE_MS).
+// ---------------------------------------------------------------------------
+const DEBOUNCE_MS = 2000;
+
+const createDebouncedStorage = () => {
+  let pendingValue: string | null = null;
+  let pendingKey: string | null = null;
+  let timer: ReturnType<typeof setTimeout> | null = null;
+
+  const writeToDisk = () => {
+    if (pendingKey !== null && pendingValue !== null) {
+      localStorage.setItem(pendingKey, pendingValue);
+    }
+    pendingKey = null;
+    pendingValue = null;
+    timer = null;
+  };
+
+  const storage = {
+    getItem: (name: string) => localStorage.getItem(name),
+    setItem: (name: string, value: string) => {
+      pendingKey = name;
+      pendingValue = value;
+      if (!timer) {
+        timer = setTimeout(writeToDisk, DEBOUNCE_MS);
+      }
+    },
+    removeItem: (name: string) => {
+      localStorage.removeItem(name);
+      if (pendingKey === name) {
+        pendingKey = null;
+        pendingValue = null;
+        if (timer) { clearTimeout(timer); timer = null; }
+      }
+    },
+  };
+
+  /** Force-write any buffered data immediately (call when streaming ends). */
+  const flush = () => {
+    if (timer) { clearTimeout(timer); timer = null; }
+    writeToDisk();
+  };
+
+  return { storage, flush };
+};
+
+const debouncedStorage = createDebouncedStorage();
 
 export type OutputMode = 'auto' | 'json' | 'table' | 'code';
 
@@ -320,35 +370,58 @@ export const useChatStore = create<ChatState>()(
 
       updateLastMessage: (conversationId, content) => {
         set((state) => {
+          const isCurrentlyStreaming = state.isStreaming;
           const updatedConvs = state.conversations.map((conv) => {
-            if (conv.id === conversationId) {
-              const updatedMessages = [...conv.messages];
-              if (updatedMessages.length > 0) {
-                const lastMsg = updatedMessages[updatedMessages.length - 1];
-                updatedMessages[updatedMessages.length - 1] = {
-                  ...lastMsg,
-                  content: lastMsg.content + content
-                };
-              }
-              // Sync messages to the active branch or mainThreadMessages
-              let updatedBranches = conv.branches;
-              let updatedMainThread = conv.mainThreadMessages;
-              if (conv.activeBranchId) {
-                updatedBranches = updatedBranches.map(b =>
-                  b.id === conv.activeBranchId ? { ...b, messages: updatedMessages } : b
-                );
-              } else {
-                updatedMainThread = updatedMessages;
-              }
-              return { ...conv, messages: updatedMessages, branches: updatedBranches, mainThreadMessages: updatedMainThread };
+            if (conv.id !== conversationId) return conv;
+
+            const msgs = conv.messages;
+            if (msgs.length === 0) return conv;
+
+            const lastMsg = msgs[msgs.length - 1];
+            const updatedLast = { ...lastMsg, content: lastMsg.content + content };
+            const updatedMessages = msgs.slice(0, -1);
+            updatedMessages.push(updatedLast);
+
+            // During streaming, skip expensive branch/mainThread sync — it will
+            // be reconciled once when setStreaming(false) triggers a final persist.
+            if (isCurrentlyStreaming) {
+              return { ...conv, messages: updatedMessages };
             }
-            return conv;
+
+            // Not streaming — full sync
+            let updatedBranches = conv.branches;
+            let updatedMainThread = conv.mainThreadMessages;
+            if (conv.activeBranchId) {
+              updatedBranches = updatedBranches.map(b =>
+                b.id === conv.activeBranchId ? { ...b, messages: updatedMessages } : b
+              );
+            } else {
+              updatedMainThread = updatedMessages;
+            }
+            return { ...conv, messages: updatedMessages, branches: updatedBranches, mainThreadMessages: updatedMainThread };
           });
           return { conversations: updatedConvs };
         });
       },
 
-      setStreaming: (isStreaming) => set({ isStreaming }),
+      setStreaming: (isStreaming) => {
+        set({ isStreaming });
+        if (!isStreaming) {
+          // Reconcile branch/mainThread state that was skipped during streaming
+          const state = get();
+          const updatedConvs = state.conversations.map(conv => {
+            if (conv.activeBranchId) {
+              const updatedBranches = conv.branches.map(b =>
+                b.id === conv.activeBranchId ? { ...b, messages: conv.messages } : b
+              );
+              return { ...conv, branches: updatedBranches };
+            }
+            return { ...conv, mainThreadMessages: conv.messages };
+          });
+          set({ conversations: updatedConvs });
+          debouncedStorage.flush();
+        }
+      },
       toggleSidebar: () => set((state) => ({ isSidebarOpen: !state.isSidebarOpen })),
       setSidebarOpen: (isOpen) => set({ isSidebarOpen: isOpen }),
       setSelectedModel: (model) => set({ selectedModel: model }),
@@ -798,6 +871,7 @@ export const useChatStore = create<ChatState>()(
     }),
     {
       name: 'aiham_conversations_v4',
+      storage: createJSONStorage(() => debouncedStorage.storage),
       partialize: (state) => ({ 
         conversations: state.conversations.map(conv => ({
           ...conv,
