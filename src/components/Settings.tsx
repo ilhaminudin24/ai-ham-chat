@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { X, Volume2, VolumeX, Bot, Trash2, Check, Sun, Moon, Monitor, Brain } from 'lucide-react';
-import { useChatStore } from '../store/chatStore';
+import { useChatStore, type OutputMode } from '../store/chatStore';
 import { MemoryManager } from './MemoryManager';
 import styles from './Settings.module.css';
 
@@ -119,7 +119,7 @@ const Settings: React.FC<SettingsProps> = ({ onClose }) => {
               <select
                 className={styles.outputSelect}
                 value={globalOutputMode}
-                onChange={(e) => setGlobalOutputMode(e.target.value as any)}
+                onChange={(e) => setGlobalOutputMode(e.target.value as OutputMode)}
               >
                 <option value="auto">Auto</option>
                 <option value="json">JSON</option>
