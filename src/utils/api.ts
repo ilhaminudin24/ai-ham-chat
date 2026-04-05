@@ -190,6 +190,11 @@ export const sendChatRequest = async (
       throw new Error(`API error: ${response.status} ${response.statusText}`);
     }
 
+    const contentType = response.headers.get('content-type') || '';
+    if (contentType.includes('text/html')) {
+      throw new Error('API returned HTML instead of SSE — is GATEWAY_URL configured in .env?');
+    }
+
     const reader = response.body?.getReader();
     const decoder = new TextDecoder();
     

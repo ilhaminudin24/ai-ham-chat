@@ -1,5 +1,7 @@
 import fs from 'fs';
 import path from 'path';
+import http from 'http';
+import https from 'https';
 import { fileURLToPath } from 'url';
 import express from 'express';
 import cors from 'cors';
@@ -16,6 +18,7 @@ const SKILLS_DIR = path.join(__dirname, 'skills');
 const SKILLS_STATE_FILE = path.join(SKILLS_DIR, 'skills-state.json');
 const SHARED_DIR = path.join(__dirname, 'shared');
 const API_TOKEN = process.env.GATEWAY_TOKEN || '';
+const GATEWAY_URL = process.env.GATEWAY_URL || '';
 
 // Ensure shared & skills directory exists
 if (!fs.existsSync(SHARED_DIR)) {
@@ -99,6 +102,44 @@ const generateShareId = () => {
     }
     return result;
 };
+
+// -------------------------------------------------------------------------------- //
+// GATEWAY PROXY — forward /v1/* to the OpenClaw Gateway
+// -------------------------------------------------------------------------------- //
+
+if (GATEWAY_URL) {
+    app.all('/v1/*', (req, res) => {
+        const targetUrl = new URL(req.originalUrl, GATEWAY_URL);
+        const client = targetUrl.protocol === 'https:' ? https : http;
+
+        const proxyReq = client.request(targetUrl, {
+            method: req.method,
+            headers: {
+                ...req.headers,
+                host: targetUrl.host,
+            },
+        }, (proxyRes) => {
+            res.writeHead(proxyRes.statusCode, proxyRes.headers);
+            proxyRes.pipe(res);
+        });
+
+        proxyReq.on('error', (err) => {
+            console.error('[Proxy] Gateway error:', err.message);
+            res.status(502).json({ error: 'Gateway unreachable: ' + err.message });
+        });
+
+        if (req.body && Object.keys(req.body).length > 0) {
+            proxyReq.write(JSON.stringify(req.body));
+            proxyReq.end();
+        } else {
+            req.pipe(proxyReq);
+        }
+    });
+} else {
+    app.all('/v1/*', (_req, res) => {
+        res.status(503).json({ error: 'GATEWAY_URL not configured in .env' });
+    });
+}
 
 // -------------------------------------------------------------------------------- //
 // API ROUTES

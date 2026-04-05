@@ -55,6 +55,11 @@ Buat 3 saran pertanyaan lanjutan dalam Bahasa Indonesia (maks 8 kata masing-masi
       throw new Error(`Suggestion generation failed: ${response.status}`);
     }
 
+    const contentType = response.headers.get('content-type') || '';
+    if (!contentType.includes('application/json')) {
+      throw new Error('API returned non-JSON response — is GATEWAY_URL configured in .env?');
+    }
+
     const data = await response.json();
     const content = data.choices?.[0]?.message?.content?.trim() || '';
     

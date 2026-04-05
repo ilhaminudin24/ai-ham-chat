@@ -1,4 +1,5 @@
 const http = require('http');
+const https = require('https');
 const fs = require('fs');
 const path = require('path');
 
@@ -8,6 +9,7 @@ const SKILLS_DIR = path.join(__dirname, 'skills');
 const SKILLS_STATE_FILE = path.join(SKILLS_DIR, 'skills-state.json');
 const SHARED_DIR = path.join(__dirname, 'shared');
 const API_TOKEN = process.env.GATEWAY_TOKEN;
+const GATEWAY_URL = process.env.GATEWAY_URL || '';
 
 // Ensure shared directory exists
 if (!fs.existsSync(SHARED_DIR)) {
@@ -354,6 +356,38 @@ function generateShareId() {
 const server = http.createServer((req, res) => {
     const urlPath = req.url.split('?')[0];
     
+    // Gateway proxy — forward /v1/* to the OpenClaw Gateway
+    if (urlPath.startsWith('/v1/')) {
+        if (!GATEWAY_URL) {
+            res.writeHead(503, { 'Content-Type': 'application/json' });
+            res.end(JSON.stringify({ error: 'GATEWAY_URL not configured in .env' }));
+            return;
+        }
+
+        const targetUrl = new URL(req.url, GATEWAY_URL);
+        const client = targetUrl.protocol === 'https:' ? https : http;
+
+        const proxyReq = client.request(targetUrl, {
+            method: req.method,
+            headers: {
+                ...req.headers,
+                host: targetUrl.host,
+            },
+        }, (proxyRes) => {
+            res.writeHead(proxyRes.statusCode, proxyRes.headers);
+            proxyRes.pipe(res);
+        });
+
+        proxyReq.on('error', (err) => {
+            console.error('[Proxy] Gateway error:', err.message);
+            res.writeHead(502, { 'Content-Type': 'application/json' });
+            res.end(JSON.stringify({ error: 'Gateway unreachable: ' + err.message }));
+        });
+
+        req.pipe(proxyReq);
+        return;
+    }
+
     // API routes
     if (urlPath.startsWith('/api/')) {
         handleApi(req, res, urlPath, req.method);

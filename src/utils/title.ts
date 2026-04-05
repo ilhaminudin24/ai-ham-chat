@@ -104,6 +104,11 @@ Write a short title (4-5 words) in English that describes the main topic.`;
       throw new Error(`Title generation failed: ${response.status}`);
     }
 
+    const contentType = response.headers.get('content-type') || '';
+    if (!contentType.includes('application/json')) {
+      throw new Error('API returned non-JSON response — is GATEWAY_URL configured in .env?');
+    }
+
     const data = await response.json();
     let title = data.choices?.[0]?.message?.content?.trim() || '';
 
